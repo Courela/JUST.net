@@ -243,5 +243,58 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"concat\":[{\"code\":\"001\",\"display\":\"Drug1\"},{\"code\":\"002\",\"display\":\"Drug2\"},{\"code\":\"pa1\",\"display\":\"PA1\"},{\"code\":\"pa2\",\"display\":\"PA2\"}],\"multipleConcat\":[{\"code\":\"001\",\"display\":\"Drug1\"},{\"code\":\"002\",\"display\":\"Drug2\"},{\"code\":\"pa1\",\"display\":\"PA1\"},{\"code\":\"pa2\",\"display\":\"PA2\"},{\"code\":\"sa1\",\"display\":\"SA1\"},{\"code\":\"sa2\",\"display\":\"SA2\"}],\"xconcat\":[{\"code\":\"001\",\"display\":\"Drug1\"},{\"code\":\"002\",\"display\":\"Drug2\"},{\"code\":\"pa1\",\"display\":\"PA1\"},{\"code\":\"pa2\",\"display\":\"PA2\"},{\"code\":\"sa1\",\"display\":\"SA1\"},{\"code\":\"sa2\",\"display\":\"SA2\"}]}", result);
         }
+
+        [Test]
+        public void Issue201()
+        {
+            var input = "{ \"head\": { \"transaction\": 0, \"signature\": 31705, \"fields\": [{ \"name\": \"Validation_Status\", \"type\": \"xsd:string\", \"process\": \"Smp\", \"settable\": false, \"string_len\": 4 }, { \"name\": \"Sample_Point\", \"type\": \"xsd:string\", \"process\": \"Smp\", \"settable\": false, \"string_len\": 12 }, { \"name\": \"RT\", \"type\": \"xsd:float\", \"units\": \"degC\", \"process\": \"Avg\", \"settable\": false } ] }, \"data\": [{ \"time\": \"1999-02-09T04:10:02\", \"vals\": [\"dummy\", \"TEST_DUMMY\", 99.99] }, { \"time\": \"2022-01-17T15:40:00\", \"vals\": [\"raw\", \"FIAQRT003\", 27.75] } ] }";
+            //var transformer = "{ \"channel_data\": { \"#loop($.head.fields,fields)\": { \"#loop($.data,data,root)\": { \"name\": \"#currentvalueatpath($.name,fields)\", \"value\": \"#currentvalueatpath(#xconcat($.vals[,#currentindex(data),]),data)\", \"time\": \"#currentvalueatpath($.time,data)\" } } } } ";
+            var transformer = "{ \"channel_data\": { \"#loop($.data,data)\": { \"#loop($.vals)\": { \"name\": \"#valueof(#xconcat($.head.fields[,#currentindex(),].name))\", \"value\": \"#currentvalue()\", \"time\": \"#currentvalueatpath($.time,data)\" } } } }";
+            //var transformer = "{ \"channel_data\": { \"#loop($.data,data)\": { " + 
+            //    "\"#ifgroup(#exists($.vals[0]))\": { \"name\": \"#valueof($.head.fields[0].name)\", \"value\": \"#currentvalueatpath($.vals[0])\", \"time\": \"#currentvalueatpath($.time)\" }," +
+            //    "\"#ifgroup(#exists($.vals[1]))\": { \"name\": \"#valueof($.head.fields[1].name)\", \"value\": \"#currentvalueatpath($.vals[1])\", \"time\": \"#currentvalueatpath($.time)\" }" +
+            //    "} } }";
+            var context = new JUSTContext
+            {
+                EvaluationMode = EvaluationMode.Strict
+            };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            transformer = "{ \"channel_data\": { \"#loop($.channel_data)\": { \"#concat(#currentvalue(), #ifcondition(#mathlessthan(#currentindex(),#subtract(#length(#valueof($.channel_data)),1)),true,#valueof(#xconcat($.channel_data[,#add(#currentindex(),1),])),#arrayempty()))\" } } }";
+            result = new JsonTransformer(context).Transform(transformer, result);
+
+            Assert.AreEqual("{\"channel_data\":[{\"name\":\"Validation_Status\",\"value\":\"dummy\",\"time\":\"1999-02-09T04:10:02\"},{\"name\":\"Sample_Point\",\"value\":\"TEST_DUMMY\",\"time\":\"1999-02-09T04:10:02\"},{\"name\":\"RT\",\"value\":99.99,\"time\":\"1999-02-09T04:10:02\"},{\"name\":\"Validation_Status\",\"value\":\"raw\",\"time\":\"2022-01-17T15:40:00\"},{\"name\":\"Sample_Point\",\"value\":\"FIAQRT003\",\"time\":\"2022-01-17T15:40:00\"},{\"name\":\"RT\",\"value\":27.75,\"time\":\"2022-01-17T15:40:00\"}]}", result);
+        }
+
+        [Test]
+        public void Issue202()
+        {
+            var input = "[ { \"FirstGroup\": \"abc\", \"SecondGroup\": \"123\", \"ContextValue\": \"test\" }, { \"FirstGroup\": \"abc\", \"SecondGroup\": \"123\", \"ContextValue\": \"test2\" }, { \"FirstGroup\": \"abc:d\", \"SecondGroup\": \"456\", \"ContextValue\": \"test\" }, { \"FirstGroup\": \"abc:d\", \"SecondGroup\": \"456\", \"ContextValue\": \"test2\" }]";
+            var transformer = "{  \"test\": \"#grouparrayby($,FirstGroup:SecondGroup,test)\" }";
+            var context = new JUSTContext
+            {
+                EvaluationMode = EvaluationMode.Strict
+            };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("{\"test\":[{\"FirstGroup\":\"abc\",\"SecondGroup\":\"123\",\"test\":[{\"ContextValue\":\"test\"},{\"ContextValue\":\"test2\"}]},{\"FirstGroup\":\"abc:d\",\"SecondGroup\":\"456\",\"test\":[{\"ContextValue\":\"test\"},{\"ContextValue\":\"test2\"}]}]}", result);
+        }
+
+        [Test]
+        public void Issue206()
+        {
+            //var input = "{ \"SHIPMENTENTITY\": { \"SHIPMENTID\": \"USMF - 000006\" } }";
+            var input = "{ \"SHIPMENTENTITY\": [ { \"SHIPMENTID\": \"USMF - 000003\" }, { \"SHIPMENTID\": \"USMF - 000006\" } ] }";
+            var transformer = "{ \"#ifgroup(#exists($.SHIPMENTENTITY.SHIPMENTID))\": { \"reference\": \"#valueof($.SHIPMENTENTITY.SHIPMENTID)\" }, \"#ifgroup(#exists($.SHIPMENTENTITY[0]))\": { \"result\": { \"#loop($.SHIPMENTENTITY)\" : { \"reference\": \"#currentvalueatpath($.SHIPMENTID)\" } } } }";
+            //var transformer = "{ \"#ifgroup(#exists($.SHIPMENTENTITY.SHIPMENTID))\": { \"reference\": \"#valueof($.SHIPMENTENTITY.SHIPMENTID)\" }, \"#ifgroup(#exists($.SHIPMENTENTITY[0]))\": { \"result\": { \"#loop($.SHIPMENTENTITY)\" : \"#currentvalue()\" } } }";
+            var context = new JUSTContext
+            {
+                EvaluationMode = EvaluationMode.Strict
+            };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+            //var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("", result);
+        }
     }
 }
