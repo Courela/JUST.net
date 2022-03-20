@@ -20,34 +20,6 @@ namespace JUST.UnitTests
         }
 
         [Test]
-        public void InsideLoopInputIsLoopElement()
-        {
-            var input = "{ \"sections\": [ { \"id\": \"first\", \"label\": \"First section\" }, { \"id\": \"second\", \"label\": \"Second section\" } ] }";
-            var transformer = "{ \"areas\": { \"#loop($.sections)\": { \"#eval(#currentvalueatpath($.id))\": \"#applyover({ 'description': '#valueof($.label)' }, '#valueof($)')\" } } }";
-            var context = new JUSTContext
-            {
-                EvaluationMode = EvaluationMode.Strict
-            };
-            var result = new JsonTransformer(context).Transform(transformer, input);
-
-            Assert.AreEqual("{\"areas\":[{\"first\":{\"description\":\"First section\"}},{\"second\":{\"description\":\"Second section\"}}]}", result);
-        }
-
-        [Test]
-        public void InsideNestedLoopsWithAlias()
-        {
-            var input = "{ \"headers\": [ { \"id\": \"first\", \"label\": \"First header\", \"sections\": [{ \"title\": \"first section first header\" },{ \"title\": \"second section first header\" }] }, { \"id\": \"second\", \"label\": \"Second header\", \"sections\": [{ \"title\": \"first section second header\" },{ \"title\": \"second section second header\" }] }] }";
-            var transformer = "{ \"areas\": { \"#loop($.headers,outside_alias)\": { \"#eval(#currentvalueatpath($.id))\": { \"#loop($.sections,inside_alias)\": { \"section\": \"#applyover({ 'description': '#valueof($.label)' }, '#valueof($)',outside_alias)\" } } } } }";
-            var context = new JUSTContext
-            {
-                EvaluationMode = EvaluationMode.Strict
-            };
-            var result = new JsonTransformer(context).Transform(transformer, input);
-
-            Assert.AreEqual("{\"areas\":[{\"first\":[{\"section\":{\"description\":\"First header\"}},{\"section\":{\"description\":\"First header\"}}]},{\"second\":[{\"section\":{\"description\":\"Second header\"}},{\"section\":{\"description\":\"Second header\"}}]}]}", result);
-        }
-
-        [Test]
         public void ObjectTransformationResult()
         {
             const string input = "{ \"data\": [ { \"saleStatus\": 1, \"priority\": \"normal\", \"other\": \"one\" }, { \"saleStatus\": 2, \"priority\": \"high\", \"other\": \"two\" }, { \"saleStatus\": 1, \"priority\": \"normal\", \"other\": \"three\" } ] }";
@@ -73,6 +45,47 @@ namespace JUST.UnitTests
             var result = new JsonTransformer(context).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":[\"one\",\"two\",\"three\"]}", result);
+        }
+
+        [Test]
+        public void InsideLoopInputIsLoopElement()
+        {
+            var input = "{ \"sections\": [ { \"id\": \"first\", \"label\": \"First section\" }, { \"id\": \"second\", \"label\": \"Second section\" } ] }";
+            var transformer = "{ \"areas\": { \"#loop($.sections)\": { \"#eval(#currentvalueatpath($.id))\": \"#applyover({ 'description': '#valueof($.label)' }, '#valueof($)')\" } } }";
+
+            var context = new JUSTContext
+            {
+                EvaluationMode = EvaluationMode.Strict
+            };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+            Assert.AreEqual("{\"areas\":[{\"first\":{\"description\":\"First section\"}},{\"second\":{\"description\":\"Second section\"}}]}", result);
+        }
+
+        [Test]
+        public void InsideNestedLoopsWithAlias()
+        {
+            var input = "{ \"headers\": [ { \"id\": \"first\", \"label\": \"First header\", \"sections\": [{ \"title\": \"first section first header\" },{ \"title\": \"second section first header\" }] }, { \"id\": \"second\", \"label\": \"Second header\", \"sections\": [{ \"title\": \"first section second header\" },{ \"title\": \"second section second header\" }] }] }";
+            var transformer = "{ \"areas\": { \"#loop($.headers,outside_alias)\": { \"#eval(#currentvalueatpath($.id))\": { \"#loop($.sections,inside_alias)\": { \"section\": \"#applyover({ 'description': '#valueof($.label)' }, '#valueof($)',outside_alias)\" } } } } }";
+            var context = new JUSTContext
+            {
+                EvaluationMode = EvaluationMode.Strict
+            };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("{\"areas\":[{\"first\":[{\"section\":{\"description\":\"First header\"}},{\"section\":{\"description\":\"First header\"}}]},{\"second\":[{\"section\":{\"description\":\"Second header\"}},{\"section\":{\"description\":\"Second header\"}}]}]}", result);
+        }
+
+        public void ReplaceGraveAccentInJsonPathExpressions()
+        {
+            var input = "[{ \"result\" : [{ \"code\" : 1, \"description\" : \"EXAMPLE\"},{ \"code\" : 1, \"description\" : \"EXAMPLE\"}]}]";
+            var transformer = "{\"data\": \"#applyover({ 'condition': '#valueof(#xconcat($.[0].result[?/(@.description==`EXAMPLE`/)].code))'}, '#valueof($.condition[0])')\"}";
+            var context = new JUSTContext
+            {
+                EvaluationMode = EvaluationMode.Strict
+            };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("{\"data\":1}", result);
         }
     }
 }
