@@ -804,7 +804,7 @@ namespace JUST
 
         public static object arrayempty(JUSTContext context)
         {
-            return Array.Empty<object>();
+            return new object[0];
         }
     }
 }
