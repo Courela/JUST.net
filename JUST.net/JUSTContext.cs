@@ -41,10 +41,12 @@ namespace JUST
         private Dictionary<string, MethodInfo> _customFunctions = new Dictionary<string, MethodInfo>();
         private int _defaultDecimalPlaces = 28;
         private char _escapeChar = '/'; //do not use backslash, it is already the escape char in JSON
+        private char _splitGroupChar = ':';
 
         internal JToken Input;
 
         public EvaluationMode EvaluationMode = EvaluationMode.FallbackToDefault;
+
         public JsonSerializerSettings JsonSettings { get; set; }
 
         public char EscapeChar { 
@@ -55,6 +57,18 @@ namespace JUST
             set
             {
                 _escapeChar = value;
+            }
+        }
+
+        public char SplitGroupChar
+        {
+            get
+            {
+                return _splitGroupChar;
+            }
+            set
+            {
+                _splitGroupChar = value;
             }
         }
 

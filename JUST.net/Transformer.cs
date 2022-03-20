@@ -110,7 +110,7 @@ namespace JUST
             var selector = context.Resolve<T>(context.Input);
             JToken selectedToken = selector.Select(path);
             return selectedToken != null && (
-                (selectedToken.Type == JTokenType.String && selectedToken.ToString().Trim() != string.Empty) || 
+                (selectedToken.Type == JTokenType.String && selectedToken.ToString().Trim() != string.Empty) ||
                 (selectedToken.Type == JTokenType.Array && selectedToken.Children().Count() > 0)
             );
         }
@@ -488,7 +488,7 @@ namespace JUST
         {
             return array.IndexOf(currentElement);
         }
-        
+
         public static object lastvalue(JArray array, JToken currentElement)
         {
             return GetValue(array.Last);
@@ -567,20 +567,20 @@ namespace JUST
             return TypedNumber(add);
         }
         #endregion
-        
+
         #region grouparrayby
         public static JArray grouparrayby(string path, string groupingElement, string groupedElement, JUSTContext context)
         {
             JArray result;
             var selector = context.Resolve<T>(context.Input);
             JArray arr = (JArray)selector.Select(path);
-            if (!groupingElement.Contains(":"))
+            if (!groupingElement.Contains(context.SplitGroupChar))
             {
                 result = Utilities.GroupArray<T>(arr, groupingElement, groupedElement, context);
             }
             else
             {
-                string[] groupingElements = groupingElement.Split(':');
+                string[] groupingElements = groupingElement.Split(context.SplitGroupChar);
                 result = Utilities.GroupArrayMultipleProperties<T>(arr, groupingElements, groupedElement, context);
             }
             return result;
@@ -628,10 +628,10 @@ namespace JUST
 
             if (list.Length >= 2)
             {
-                decimal lshDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal), 
-                    list[0], 
+                decimal lshDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal),
+                    list[0],
                     list.Length >= 3 ? ((JUSTContext)list[2]).EvaluationMode : EvaluationMode.Strict);
-                decimal rhsDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal), 
+                decimal rhsDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal),
                     list[1],
                     list.Length >= 3 ? ((JUSTContext)list[2]).EvaluationMode : EvaluationMode.Strict);
 
@@ -649,7 +649,7 @@ namespace JUST
                 decimal lshDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal),
                     list[0],
                     list.Length >= 3 ? ((JUSTContext)list[2]).EvaluationMode : EvaluationMode.Strict);
-                decimal rhsDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal), 
+                decimal rhsDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal),
                     list[1],
                     list.Length >= 3 ? ((JUSTContext)list[2]).EvaluationMode : EvaluationMode.Strict);
 
@@ -664,10 +664,10 @@ namespace JUST
             bool result = false;
             if (list.Length >= 2)
             {
-                decimal lshDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal), 
+                decimal lshDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal),
                     list[0],
                     list.Length >= 3 ? ((JUSTContext)list[2]).EvaluationMode : EvaluationMode.Strict);
-                decimal rhsDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal), 
+                decimal rhsDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal),
                     list[1],
                     list.Length >= 3 ? ((JUSTContext)list[2]).EvaluationMode : EvaluationMode.Strict);
 
@@ -682,10 +682,10 @@ namespace JUST
             bool result = false;
             if (list.Length >= 2)
             {
-                decimal lshDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal), 
+                decimal lshDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal),
                     list[0],
                     list.Length >= 3 ? ((JUSTContext)list[2]).EvaluationMode : EvaluationMode.Strict);
-                decimal rhsDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal), 
+                decimal rhsDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal),
                     list[1],
                     list.Length >= 3 ? ((JUSTContext)list[2]).EvaluationMode : EvaluationMode.Strict);
 
@@ -700,10 +700,10 @@ namespace JUST
             bool result = false;
             if (list.Length >= 2)
             {
-                decimal lshDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal), 
+                decimal lshDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal),
                     list[0],
                     list.Length >= 3 ? ((JUSTContext)list[2]).EvaluationMode : EvaluationMode.Strict);
-                decimal rhsDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal), 
+                decimal rhsDecimal = (decimal)ReflectionHelper.GetTypedValue(typeof(decimal),
                     list[1],
                     list.Length >= 3 ? ((JUSTContext)list[2]).EvaluationMode : EvaluationMode.Strict);
 
@@ -766,8 +766,8 @@ namespace JUST
 
         public static bool isnumber(object val, JUSTContext context)
         {
-            try 
-            { 
+            try
+            {
                 object r = ReflectionHelper.GetTypedValue(typeof(decimal), val, context.EvaluationMode);
                 return r is decimal;
             }

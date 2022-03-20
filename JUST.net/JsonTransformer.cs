@@ -20,16 +20,27 @@ namespace JUST
         public JsonTransformer(JUSTContext context = null) : base(context)
         {
         }
-
         public string Transform(string transformerJson, string inputJson)
         {
-            return Transform(transformerJson, JsonConvert.DeserializeObject<JToken>(inputJson, Context.JsonSettings));
+            return Transform(transformerJson, DeserializeWithoutDateParse<JToken>(inputJson));
+        }
+
+        private static string SerializeWithoutDateParse<T>(T obj)
+        {
+            var settings = new JsonSerializerSettings() { DateParseHandling = DateParseHandling.None };
+            return JsonConvert.SerializeObject(obj, settings);
+        }
+
+        private static T DeserializeWithoutDateParse<T>(string inputJson)
+        {
+            var settings = new JsonSerializerSettings() { DateParseHandling = DateParseHandling.None };
+            return JsonConvert.DeserializeObject<T>(inputJson, settings);
         }
 
         public string Transform(string transformerJson, JToken input)
         {
             JToken result;
-            JToken transformerToken = JsonConvert.DeserializeObject<JToken>(transformerJson, Context.JsonSettings);
+            JToken transformerToken = DeserializeWithoutDateParse<JToken>(transformerJson);
             switch (transformerToken.Type)
             {
                 case JTokenType.Object:
@@ -42,15 +53,13 @@ namespace JUST
                     result = TransformValue(transformerToken, input);
                     break;
             }
-
-            string output = JsonConvert.SerializeObject(result, Context.JsonSettings);
-
+            string output = SerializeWithoutDateParse(result);
             return output;
         }
 
         public JArray Transform(JArray transformerArray, string input)
         {
-            return Transform(transformerArray, JsonConvert.DeserializeObject<JToken>(input, Context.JsonSettings));
+            return Transform(transformerArray, DeserializeWithoutDateParse<JToken>(input));
         }
 
         public JArray Transform(JArray transformerArray, JToken input)
@@ -111,7 +120,7 @@ namespace JUST
 
         public JToken Transform(JObject transformer, string input)
         {
-            return Transform(transformer, JsonConvert.DeserializeObject<JToken>(input, Context.JsonSettings));
+            return Transform(transformer, DeserializeWithoutDateParse<JToken>(input));
         }
 
         public JToken Transform(JObject transformer, JToken input)
@@ -971,7 +980,7 @@ namespace JUST
         #region Split
         public static IEnumerable<string> SplitJson(string input, string arrayPath, JUSTContext context)
         {
-            JObject inputJObject = JsonConvert.DeserializeObject<JObject>(input, context.JsonSettings);
+            JObject inputJObject = DeserializeWithoutDateParse<JObject>(input);
 
             List<JObject> jObjects = SplitJson(inputJObject, arrayPath, context).ToList();
 
@@ -982,7 +991,7 @@ namespace JUST
                 if (output == null)
                     output = new List<string>();
 
-                output.Add(JsonConvert.SerializeObject(jObject, context.JsonSettings));
+                output.Add(SerializeWithoutDateParse(jObject));
             }
 
             return output;
