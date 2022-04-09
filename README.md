@@ -1683,7 +1683,7 @@ Output:
   "fifth": true,
   "sixth": "value is true"
 }
-
+```
 
 ## <a name="schemavalidation"></a> Schema Validation against multiple schemas using prefixes
 
