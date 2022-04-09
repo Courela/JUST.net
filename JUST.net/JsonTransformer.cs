@@ -858,7 +858,7 @@ namespace JUST
             }
         }
 
-        private object ParseApplyOver(List<object> listParameters, IDictionary<string, JArray> array, IDictionary<string, JToken> currentArrayElement, object[] parameters)
+        private object ParseApplyOver(IList<object> listParameters, IDictionary<string, JArray> array, IDictionary<string, JToken> currentArrayElement)
         {
             object output;
 
@@ -869,21 +869,21 @@ namespace JUST
                 contextInput = currentArrayElement[alias];
             }
 
-            var input = JToken.Parse(Transform(parameters[0].ToString(), contextInput.ToString()));
+            var input = JToken.Parse(Transform(listParameters[0].ToString(), contextInput.ToString()));
             Context.Input = input;
-            if (parameters[1].ToString().Trim().Trim('\'').StartsWith("{"))
+            if (listParameters[1].ToString().Trim().Trim('\'').StartsWith("{"))
             {
-                var jobj = JObject.Parse(parameters[1].ToString().Trim().Trim('\''));
+                var jobj = JObject.Parse(listParameters[1].ToString().Trim().Trim('\''));
                 output = new JsonTransformer(Context).Transform(jobj, input);
             }
-            else if (parameters[1].ToString().Trim().Trim('\'').StartsWith("["))
+            else if (listParameters[1].ToString().Trim().Trim('\'').StartsWith("["))
             {
-                var jarr = JArray.Parse(parameters[1].ToString().Trim().Trim('\''));
+                var jarr = JArray.Parse(listParameters[1].ToString().Trim().Trim('\''));
                 output = new JsonTransformer(Context).Transform(jarr, input);
             }
             else
             {
-                output = ParseFunction(parameters[1].ToString().Trim().Trim('\''), null, array, currentArrayElement);
+                output = ParseFunction(listParameters[1].ToString().Trim().Trim('\''), null, array, currentArrayElement);
             }
             Context.Input = tmpContext;
             return output;
@@ -977,11 +977,7 @@ namespace JUST
             }
             else if (functionName == "applyover")
             {
-                var contextInput = Context.Input;
-                var input = JToken.Parse(Transform(listParameters[0].ToString(), contextInput.ToString()));
-                Context.Input = input;
-                output = ParseFunction(listParameters[1].ToString().Trim().Trim('\''), null, array, currentArrayElement);
-                Context.Input = contextInput;
+                output = ParseApplyOver(listParameters, array, currentArrayElement);
             }
             else
             {
