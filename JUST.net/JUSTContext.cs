@@ -33,7 +33,8 @@ namespace JUST
         FallbackToDefault = 1,
         AddOrReplaceProperties = 2,
         Strict = 4,
-        JoinArrays = 8
+        JoinArrays = 8,
+        LookInTransformed = 16
     }
 
     public class JUSTContext
@@ -115,6 +116,11 @@ namespace JUST
         internal bool IsFallbackToDefault()
         {
             return (EvaluationMode & EvaluationMode.FallbackToDefault) == EvaluationMode.FallbackToDefault;
+        }
+
+        internal bool IsLookInTransformed()
+        {
+            return (EvaluationMode & EvaluationMode.LookInTransformed) == EvaluationMode.LookInTransformed;
         }
 
         public void RegisterCustomFunction(CustomFunction customFunction)
