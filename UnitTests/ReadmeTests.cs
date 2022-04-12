@@ -296,5 +296,21 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("", result);
         }
+
+        [Test]
+        public void Issue230()
+        {
+            const string input = "{ \"Coverages\": [{ \"Id\": \"b2223b13-75d4-42c2-8fcf-1234567890ab\",\"FormNumber\": \"PSXS 01 02 03 04\", \"Notes\": null }," +
+                                 " { \"Id\": \"b2223b13-75d4-42c2-8fcf-ba0123456789\",\"FormNumber\": \"PSXS 04 03 02 01\", \"Notes\": null }," +
+                                 " { \"Id\": \"b2223b13-75d4-42c2-8fcf-ba0123456789\",\"FormNumber\": \"PCTC 04 03 02 01\", \"Notes\": null }] }";
+            const string transformer = "{ \"FormsListCoverages\": { " +
+                                       " \"#loop($.Coverages[?(@.FormNumber =~ /^PSXS.*$//)])\": { " +
+                                       "   \"FormNumber\": \"#currentvalueatpath($.FormNumber)\", \"FormNotes\": \"#currentvalueatpath($.Notes)\", " +
+                                       " } } }";
+
+            var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("{\"FormsListCoverages\":[{\"FormNumber\":\"PSXS 01 02 03 04\",\"FormNotes\":null},{\"FormNumber\":\"PSXS 04 03 02 01\",\"FormNotes\":null}]}", result);
+        }
     }
 }
