@@ -323,5 +323,98 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"FormsListCoverages\":[{\"FormNumber\":\"PSXS 01 02 03 04\",\"FormNotes\":null},{\"FormNumber\":\"PSXS 04 03 02 01\",\"FormNotes\":null}]}", result);
         }
+
+        [Test]
+        public void Issue173()
+        {
+            const string input = "[{ \"contract\": \"9402598776\" }, { \"contract\": \"9402598777\"},{ \"contract\": \"9402201620\"}]";
+            const string transformer = "[{ \"#loop($)\": { \"accountId\": \"#currentvalueatpath($.contract)\" } }]";
+
+            var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
+
+        [Test]
+        public void Issue231()
+        {
+            const string input = "{ \"allocations\": [{ \"fundId\": 40000037, \"fundName\": \"Conservative (Super)\", \"percentage\": 0.00 }, " +
+                " { \"fundId\": 40000038, \"fundName\": \"Balanced (Super)\", \"percentage\": 29.99880004799808 }] }";
+            const string transformer = "{ \"#loop(allocations[?(@.percentage != 0)])\": { \"item\": \"#currentvalue()\" } }";
+
+            var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("[{\"item\":{\"fundId\":40000038,\"fundName\":\"Balanced (Super)\",\"percentage\":29.99880004799808}}]", result);
+        }
+
+        [Test]
+        public void Issue232()
+        {
+            const string input = "{\"Systems\": [{\"Id\": \"SystemId1\",\"Components\": [{\"Id\": \"CompId1\"},{\"Id\": \"CompId2\"}]},{\"Id\": \"SystemId2\",\"Components\": [{\"Id\": \"CompId3\"},{\"Id\": \"CompId4\"}]}]}";
+            const string transformer = "{ \"SystemsAndComponets\": \"#applyover({ 'Systems': { '#loop($.Systems)': { 'Id': '#currentvalueatpath($.Id)' } }/, 'Components': { '#loop($.Systems[:].Components[:])': { 'Id': '#currentvalueatpath($.Id)' } },'#concat(#valueof($.Systems),#valueof($.Components))')\" }";
+
+            var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
+
+        [Test]
+        public void Issue233()
+        {
+            const string input = "{\"Array\": [{\"Id\": \"123AAA\"}, {\"Id\": \"123BBB\"}, {\"Id\": \"123AAA\"} ] }";
+            const string transformer = "{ \"Array\": { \"#loop($.Array)\": { \"#ifgroup(#mathgreaterthanorequalto(#firstindexof(#currentvalueatpath($.Id),AAA),0))\": { \"Value\": \"#currentvalue()\" } } } }";
+
+            var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
+
+        [Test]
+        public void Issue234()
+        {
+            const string input = "{ \"orderItems\": [ { \"id\": \"1\", \"sku\": \"a\" }, { \"id\": \"2\", \"sku\": \"b\" }, { \"id\": \"3\", \"sku\": \"c\" } ], \"affectedItems\": [ 1, 2 ], \"test\": \"abc\" }";
+            const string transformer = "{ \"#loop($.affectedItems,affectedItems)\": { \"#loop($.orderItems,orderItems,root)\": { \"sku\": \"#currentvalueatpath($.sku)\", \"id\": \"#currentvalue(affectedItems)\" } }}";
+
+            var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
+
+        [Test]
+        public void Issue236()
+        {
+            const string input = "{ \"createdTimestamp\": \"2022-06-02T15:38:02.783\", \"orderLine\": [ { \"itemId\": \"883849795227\", \"fulfillmentStatus\": \"Canceled\" }, { \"itemId\": \"194998065544\", \"fulfillmentStatus\": \"Canceled\" }, { \"itemId\": \"194998065500\", \"fulfillmentStatus\": \"Nothing\" } ] }";
+            //const string transformer = "{ \"productCode\": \"#valueof($.orderLine[?(@.fulfillmentStatus =~ /Canceled//)].itemId)\" }";
+            const string transformer = "{ \"productCode\": \"#applyover({ 'arr': '#valueof($.orderLine[?(@.fulfillmentStatus =~ /Canceled/)].itemId)' }, '#valueof($.arr[0])')\" }";
+
+            var result = new JsonTransformer(new JUSTContext { EscapeChar = '|' }).Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
+
+        [Test]
+        public void Issue237()
+        {
+            const string input = "{ \"content_area\": { \"content_area\": [ \"1\" ] }, \"additional_content\": [{ \"Cards_feed\": { \"cards_feed\": [ \"2\"] } }] }";
+            //const string transformer = "{ \"content\": [ { \"#loop($.content_area.content_area)\": { \"aaa\": \"bbb\" } }, { \"#loop($.additional_content[0].Cards_feed.cards_feed)\": { \"xxx\": \"yyy\" } } ] }";
+            //const string transformer = "{ \"content\": \"#concat(#valueof(#loop($.content_area.content_area): { aaa: bbb }),#valueof(#loop($.additional_content[0].Cards_feed.cards_feed): { xxx: yyy }))\" }";
+            //const string transformer = "{ \"content1\": { \"#loop($.content_area.content_area)\": { \"aaa\": \"bbb\" } }, \"content2\": { \"#loop($.additional_content[0].Cards_feed.cards_feed)\": { \"xxx\": \"yyy\" } } }";
+            const string transformer = "{ \"content\": \"#applyover({ 'content1': { '#loop/($.content_area.content_area/)': { 'aaa': 'bbb' } }/, 'content2': { '#loop/($.additional_content[0].Cards_feed.cards_feed/)': { 'xxx': 'yyy' } } }, '#concat(#valueof($.content1),#valueof($.content2))')\" }";
+
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
+
+        [Test]
+        public void Issue238()
+        {
+            const string input = "{ \"additional_content\": [{ \"Cards_feed\": { \"cards_feed\": [ \"2\"] } }] }";
+            const string transformer = "{ \"content\": [ { \"aaa\": \"bbb\" }, { \"#ifgroup(#exists($.additional_content[*].Cards_feed))\": { \"#loop($.additional_content[*].Cards_feed.cards_feed)\": { \"xxx\": \"yyy\" } } } ] }";
+
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
     }
 }
