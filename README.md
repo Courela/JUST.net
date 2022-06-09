@@ -1866,7 +1866,7 @@ Sample code to transform from JSON to XML:
 ```C#
 string input = File.ReadAllText("Input.json");``
 string transformer = File.ReadAllText("DataTransformer.xml");
-string transformedString = DataTransformer.Transform(transformer, input);
+string transformedString = new DataTransformer().Transform(transformer, input);
 ```
 
 Input.json:
