@@ -416,5 +416,21 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{}", result);
         }
+
+        [Test]
+        public void Issue240()
+        {
+            const string input = "{ \"Data\": [ { \"Customer\": { \"Test\":\"TEST\", \"VehicleOwner\": null, \"Claimant\": { \"NameFirst\": \"TEST\", \"NameLast\": \"TEST\", \"Email\": \"test@test.com\", \"Phone\": null, \"Contact\": \"TEST\" }, \"Insured\": { \"NameFirst\": \"TEST\", \"NameLast\": \"TEST\", \"Email\": \"test@test.com\", \"PhoneCell\": \"123456789\", \"Contact\": \"TEST\" } } } ]}";
+            //const string transformer = "{ \"test\": { \"#loop($..Customer.*)\": { \"#loop($.Contact)\": \"#currentvalue()\" } } }";
+            //const string transformer = "{ \"test\": { \"#loop($..Customer.*)\": \"#currentvalueatpath($.Contact)\" } }";
+            //const string transformer = "{ \"test\": \"#valueof($..Customer.*[?/(@ == 'TEST'/)])\" }";
+            //const string transformer = "{ \"test\": \"#valueof($..Customer.*)\" }";
+
+            const string transformer = "\"#applyover({ '#loop($..Customer.*)': { '#ifgroup(#exists($.Contact))': { 'Id': null/, 'Name': '#xconcat(#currentvalueatpath($.NameFirst)/,-/,#currentvalueatpath($.NameLast))'/, 'Email': '#currentvalueatpath($.Email)'/, 'Phone': '#currentvalueatpath($.PhoneCell)'/, 'SourceSystemId': 1 } }, '#valueof($[?(@.Id)])')\"";
+
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
     }
 }
