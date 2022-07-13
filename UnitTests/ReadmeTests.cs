@@ -432,5 +432,17 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{}", result);
         }
+
+        [Test]
+        public void Issue243()
+        {
+            const string input = "{ \"paging\": { \"totalItems\": 76, \"totalPages\": 16, \"pageSize\": 5, \"currentPage\": 1, \"maxPageSize\": 250 }, \"data\": [ { \"data\": { \"uniqueId\": \"cz-vehicle-17336428\", \"name\": \"ŠKODA SUPERB NFD7FD7GC* ACDTUAX01 3T\" }, \"meta\": { \"createdAt\": \"2022-07-01T21:16:50.1252598+00:00\", \"hash\": \"bc53b2682f8498abffc49c3203609911da334d6d3ad9f8156a7c0499fc83caf7\", } }, { \"data\": { \"uniqueId\": \"cz-vehicle-17168912\", \"name\": \"HYUNDAI I 30 M6DAZ11 F5P91 PDE\" }, \"meta\": { \"createdAt\": \"2022-07-01T21:16:50.1252598+00:00\", \"hash\": \"6b5a1953d45a35341385575eead2468f115633e507da8f84a538a74b877d0c1a\", } } ]}";
+            //const string transformer = "{ \"#\": [ \"#copy($)\", \"#delete($.data..data.name)\" ] }";
+            const string transformer = "{ \"paging\": { \"#\": [ \"#copy($.paging)\" ] }, \"data\": { \"#loop($.data)\": { \"data\": { \"#\": [ \"#copy($.data)\", \"#delete($.name)\" ] }, \"meta\": { \"#\": [ \"#copy($.meta)\" ] } } } }";
+
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{\"paging\":{\"totalItems\":76,\"totalPages\":16,\"pageSize\":5,\"currentPage\":1,\"maxPageSize\":250},\"data\":[{\"data\":{\"uniqueId\":\"cz-vehicle-17336428\"},\"meta\":{\"createdAt\":\"2022-07-01T21:16:50.1252598+00:00\",\"hash\":\"bc53b2682f8498abffc49c3203609911da334d6d3ad9f8156a7c0499fc83caf7\"}},{\"data\":{\"uniqueId\":\"cz-vehicle-17168912\"},\"meta\":{\"createdAt\":\"2022-07-01T21:16:50.1252598+00:00\",\"hash\":\"6b5a1953d45a35341385575eead2468f115633e507da8f84a538a74b877d0c1a\"}}]}", result);
+        }
     }
 }
