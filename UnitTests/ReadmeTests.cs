@@ -444,5 +444,16 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"paging\":{\"totalItems\":76,\"totalPages\":16,\"pageSize\":5,\"currentPage\":1,\"maxPageSize\":250},\"data\":[{\"data\":{\"uniqueId\":\"cz-vehicle-17336428\"},\"meta\":{\"createdAt\":\"2022-07-01T21:16:50.1252598+00:00\",\"hash\":\"bc53b2682f8498abffc49c3203609911da334d6d3ad9f8156a7c0499fc83caf7\"}},{\"data\":{\"uniqueId\":\"cz-vehicle-17168912\"},\"meta\":{\"createdAt\":\"2022-07-01T21:16:50.1252598+00:00\",\"hash\":\"6b5a1953d45a35341385575eead2468f115633e507da8f84a538a74b877d0c1a\"}}]}", result);
         }
+
+        [Test]
+        public void Issue245()
+        {
+            const string input = "{ \"someObject\": { \"someArray\": [ { \"property1\": \"Some property\", \"user\": { \"userId\": 2 }, \"property2\": \"Some property\" }, { \"property1\": \"Some property 2\", \"user\": { \"userId\": 3 }, \"property2\": \"Some property 3\" }, ] }, \"otherObject\":{ \"otherArray\": [ { \"id\": 2, \"property3\" : \"some value\" }, { \"id\": 3, \"property3\" : \"some value2\" } ] }}";
+            const string transformer = "{\"someObject\": {\"someArray\": {\"#loop($.someObject.someArray)\" : {\"property1\": \"#currentvalueatpath($.property1)\",\"user_test\": \"#currentvalueatpath($.user.userId)\",\"user\": \"#valueof(#xconcat($.otherObject.otherArray[?/(@.id==,#currentvalueatpath($.user.userId),/)]))\",\"property2\": \"#currentvalueatpath($.property2)\" }} }}";
+
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{\"someObject\":{\"someArray\":[{\"property1\":\"Some property\",\"user_test\":2,\"user\":{\"id\":2,\"property3\":\"some value\"},\"property2\":\"Some property\"},{\"property1\":\"Some property 2\",\"user_test\":3,\"user\":{\"id\":3,\"property3\":\"some value2\"},\"property2\":\"Some property 3\"}]}}", result);
+        }
     }
 }
