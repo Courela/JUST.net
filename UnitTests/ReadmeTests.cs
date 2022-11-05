@@ -455,5 +455,16 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"someObject\":{\"someArray\":[{\"property1\":\"Some property\",\"user_test\":2,\"user\":{\"id\":2,\"property3\":\"some value\"},\"property2\":\"Some property\"},{\"property1\":\"Some property 2\",\"user_test\":3,\"user\":{\"id\":3,\"property3\":\"some value2\"},\"property2\":\"Some property 3\"}]}}", result);
         }
+
+        [Test]
+        public void Issue248()
+        {
+            const string input = "{\"FirstName\": \"Ghaiath is the best ever\",\"LastName\": \"\" }";
+            const string transformer = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><Root><FirstName>#valueof($.FirstName)</FirstName><LastName>#valueof($.LastName)</LastName></Root>";
+
+            var result = new DataTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("<?xml version=\"1.0\" encoding=\"UTF-8\" ?><Root><FirstName>Ghaiath is the best ever</FirstName><LastName></LastName></Root>", result);
+        }
     }
 }
