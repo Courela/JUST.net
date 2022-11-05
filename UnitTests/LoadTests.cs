@@ -5,7 +5,7 @@ using System.IO;
 
 namespace JUST.UnitTests
 {
-    [TestFixture]
+    [TestFixture, Category("Load")]
     public class LoadTests
     {
         [Test]
@@ -18,7 +18,7 @@ namespace JUST.UnitTests
             new JsonTransformer().Transform(transformer, input);
             w.Stop();
             var timeConsumed = w.Elapsed;
-            Assert.LessOrEqual(timeConsumed, TimeSpan.FromSeconds(5));
+            Assert.LessOrEqual(timeConsumed, TimeSpan.FromSeconds(8));
         }
 
         [Test]
