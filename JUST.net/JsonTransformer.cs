@@ -343,9 +343,39 @@ namespace JUST
                 JToken tokenToRemove = GetSelectableToken(parentToken, Context).Select(selectedToken);
 
                 if (tokenToRemove != null)
-                    tokenToRemove.Ancestors().First().Remove();
+                {
+                    if (tokenToRemove.Ancestors().Count() > 0)
+                    {
+                        tokenToRemove.Ancestors().First().Remove();
+                    }
+                    else
+                    {
+                        // if (tokenToRemove.Children().Count() > 0) {
+                        //     for (int i = 0; i < tokenToRemove.Count();)
+                        //     {
+                        //         RemoveFromParent(parentToken, tokenToRemove[0]);
+                        //     }
+                        // }
+                    }
+                }
             }
 
+        }
+
+        private static void RemoveFromParent(JToken parentToken, JToken t)
+        {
+            if (parentToken.Type != JTokenType.Object && parentToken.Type != JTokenType.Array && 
+                parentToken.HasValues && parentToken.Value<string>() == t.Value<string>())
+            {
+                parentToken.Remove();
+            }
+            else
+            {
+                if (parentToken.Children().Count() > 0)
+                {
+                    RemoveFromParent(parentToken.First(), t);
+                }
+            }
         }
 
         private static void ReplacePostOperationBuildUp(JToken parentToken, Dictionary<string, JToken> tokensToReplace)
