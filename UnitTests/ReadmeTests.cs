@@ -480,5 +480,16 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("<?xml version=\"1.0\" encoding=\"UTF-8\" ?><Root><FirstName>Ghaiath is the best ever</FirstName><LastName></LastName></Root>", result);
         }
+
+        [Test]
+        public void Issue252()
+        {
+            const string input = "{\"arg\": 1,\"arr\": [{\"id\": 1,\"val\": 100},{\"id\": 2,\"val\": 200}]}";
+            const string transformer = "{\"sharp\": \"/#not_a_function\",\"sharp_arg\": \"#xconcat(/#not,_a_function_arg)\"}";
+
+            var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
     }
 }
