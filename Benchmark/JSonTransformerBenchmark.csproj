@@ -12,6 +12,9 @@
     <Configuration>Release</Configuration>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+  <PropertyGroup>
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\tests.runsettings</RunSettingsFilePath>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.2"/>
