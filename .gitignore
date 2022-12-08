@@ -241,4 +241,4 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 .vscode/
-Benchmark/BenchmarkDotNet.Artifacts/
+Benchmark/BenchmarkDotNet.Artifacts/*.log
