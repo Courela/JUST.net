@@ -78,6 +78,10 @@ string transformedString = new JsonTransformer(context).Transform(transformer, i
 string transformedString = new JsonTransformer<JmesPathSelectable>.Transform(transformer, input);
 ```
 
+# <a name="benchmark"></a> Benchmark results
+One can find the benchmark results [here](Benchmark/BenchmarkDotNet.Artifacts/results/JSonTransformerBenchmark.Benchmarks-report-github.md).
+
+
 # <a name="using"></a> Using JUST to transform JSON
 
 JUST is a transformation language just like XSLT. It includes functions which are used inside the transformer JSON to transform the input JSON in a desired output JSON. This section describes the various functions present in JUST and how they can be used to transform your JSON.
