@@ -15,8 +15,12 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.2"/>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\JUST.net\JUST.net.csproj" />
   </ItemGroup>
+  
   <ItemGroup>
     <None Update="Inputs\large_input.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Inputs\large_transformer.json" CopyToOutputDirectory="PreserveNewest" />
