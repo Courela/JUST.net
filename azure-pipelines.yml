@@ -32,7 +32,11 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
-    testAssemblyVer2: '**\*UnitTest*.dll|**\testhost.dll'
+    testAssemblyVer2: |
+      **\UnitTestForExternalAssemblyBug.dll
+      **\JUST.net.UnitTests.dll
+      !**/*TestAdapter.dll
+      !**/obj/**
     # testFiltercriteria: 'TestCategory=ReadMe|TestCategory=CustomFunctions'
     # diagnosticsEnabled: true
     failOnMinTestsNotRun: true
