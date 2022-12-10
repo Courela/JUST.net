@@ -32,5 +32,6 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
-    testAssemblyVer2: '**\*UnitTest*.dll,**\testhost.dll'
+    # testAssemblyVer2: '**\*UnitTest*.dll,**\testhost.dll'
+    testFiltercriteria: 'TestCategory=ReadMe'
     failOnMinTestsNotRun: true
