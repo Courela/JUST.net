@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- Configurations that affect the Test Framework -->
+  <RunConfiguration>
+    <!-- Any TargetFramework moniker or omit the whole tag for auto-detection. -->
+    <!-- net48, [net40], net6.0, net5.0, netcoreapp3.1, uap10.0 etc. -->
+    <TargetFrameworkVersion>net6.0</TargetFrameworkVersion>
+  </RunConfiguration>
+</RunSettings>
