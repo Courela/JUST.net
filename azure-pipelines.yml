@@ -40,3 +40,5 @@ steps:
     # testFiltercriteria: 'TestCategory=ReadMe|TestCategory=CustomFunctions'
     # diagnosticsEnabled: true
     failOnMinTestsNotRun: true
+    codeCoverageEnabled: true
+    
