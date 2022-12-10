@@ -33,4 +33,4 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
     testAssemblyVer2: '**\UnitTestForExternalAssemblyBug.dll,**\JUST.net.UnitTests.dll,!**\*TestAdapter.dll,!**\obj\**'
-    minimumExpectedTests: '1'
+    failOnMinTestsNotRun: true
