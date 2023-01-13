@@ -491,5 +491,16 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{}", result);
         }
+
+        [Test]
+        public void Issue258()
+        {
+            const string input = "{ \"employees\": [{  \"employee_unique_id\": \"FA6FDECD-DFAD-4C6D-80E8-752643BF4C9E\",  \"clinician_id\": \"178\",  \"salutation\": null,  \"first_name\": \"Valid\",  \"can_drive\": true,  \"locations\": [{   \"location_id\": 23,   \"location_name\": \"test\"  }, {   \"location_id\": 24,   \"location_name\": \"test444\"  }  ] }, {  \"employee_unique_id\": \"GA6FDECD-DFAD-4C6D-80E8-752643BF4C9O\",  \"clinician_id\": \"179\",  \"salutation\": null,  \"first_name\": \"Valid222\",  \"can_drive\": false,  \"locations\": [{   \"location_id\": 23,   \"location_name\": \"test\"  }, {   \"location_id\": 24,   \"location_name\": \"test444\"  }  ] } ]}";
+            const string transformer = "{ \"employees\": { \"#loop($.employees,employee)\": { \"employee_unique_id\": \"#currentvalueatpath($.employee_unique_id,employee)\", \"personal\": { \"clinician_id\": \"#currentvalueatpath($.clinician_id,employee)\", \"salutation\": \"#currentvalueatpath($.salutation,employee)\", \"first_name\": \"#currentvalueatpath($.first_name,employee)\", \"can_drive\": \"#isboolean(#currentvalueatpath($.can_drive,employee))\", \"locations\": { \"#loop($.locations)\": { \"location_id\": \"#currentvalueatpath($.location_id)\", \"location_name\": \"#currentvalueatpath($.location_name)\" } } } } }}";
+
+            var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("{\"employees\":[{\"employee_unique_id\":\"FA6FDECD-DFAD-4C6D-80E8-752643BF4C9E\",\"personal\":{\"clinician_id\":\"178\",\"salutation\":\"#currentvalueatpath($.salutation,employee),\",\"first_name\":\"Valid\",\"can_drive\":true,\"locations\":[{\"location_id\":23,\"location_name\":\"test\"},{\"location_id\":24,\"location_name\":\"test444\"}]}},{\"employee_unique_id\":\"GA6FDECD-DFAD-4C6D-80E8-752643BF4C9O\",\"personal\":{\"clinician_id\":\"179\",\"salutation\":\"#currentvalueatpath($.salutation,employee),\",\"first_name\":\"Valid222\",\"can_drive\":true,\"locations\":[{\"location_id\":23,\"location_name\":\"test\"},{\"location_id\":24,\"location_name\":\"test444\"}]}}]}", result);
+        }
     }
 }
