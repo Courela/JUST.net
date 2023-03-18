@@ -502,5 +502,36 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"employees\":[{\"employee_unique_id\":\"FA6FDECD-DFAD-4C6D-80E8-752643BF4C9E\",\"personal\":{\"clinician_id\":\"178\",\"salutation\":\"#currentvalueatpath($.salutation,employee),\",\"first_name\":\"Valid\",\"can_drive\":true,\"locations\":[{\"location_id\":23,\"location_name\":\"test\"},{\"location_id\":24,\"location_name\":\"test444\"}]}},{\"employee_unique_id\":\"GA6FDECD-DFAD-4C6D-80E8-752643BF4C9O\",\"personal\":{\"clinician_id\":\"179\",\"salutation\":\"#currentvalueatpath($.salutation,employee),\",\"first_name\":\"Valid222\",\"can_drive\":true,\"locations\":[{\"location_id\":23,\"location_name\":\"test\"},{\"location_id\":24,\"location_name\":\"test444\"}]}}]}", result);
         }
+
+        [Test]
+        public void Issue264()
+        {
+            const string input = "{\"Customer\":[{ " +
+                                    "\"Info1\":{" +
+                                        "\"Field1\":\"Value1\",\"Field2\":\"Value2\",\"Field3\":\"Value3\" " +
+                                    "}," +
+                                    "\"Info2\":{" +
+                                        "\"Field4\":\"Value4\",\"Field5\":\"Value5\",\"Field6\":\"Value6\" " +
+                                    "}},{\"Info1\":{\"Field1\":\"Value7\",\"Field2\":\"Value8\",\"Field3\":\"Value9\"},\"Info2\":{\"Field4\":\"Value10\",\"Field5\":\"Value11\",\"Field6\":\"Value12\"}}]}";
+            //const string transformer = "{ \"GenericCustomer\": { \"#loop($.Customer)\": { \"GenericComponent1\": \"#currentvalueatpath($.Info1.Field1)\", \"GenericComponent2\": \"#currentvalueatpath($.Info1.Field2)\", \"GenericComponent3\": \"#currentvalueatpath($.Info1.Field3)\" } } }";
+            /*
+            const string transformer = "{\"GenericCustomer1\": {" +
+                                            "\"#loop($.Customer)\":{" +
+                                                "\"GenericComponent1\":\"#currentvalueatpath($.Info1.Field1)\"," + 
+                                                "\"GenericComponent2\":\"#currentvalueatpath($.Info1.Field2)\"," + 
+                                                "\"GenericComponent3\":\"#currentvalueatpath($.Info1.Field3)\" "+ 
+                                            "}" +
+                                            "}," +
+                                            "\"GenericCustomer2\": { "+ 
+                                                "\"#loop($.Customer)\":{ " +
+                                                    "\"GenericComponent1\":\"#currentvalueatpath($.Info2.Field4)\", " +
+                                                    "\"GenericComponent2\":\"#currentvalueatpath($.Info2.Field5)\", " +
+                                                    "\"GenericComponent3\":\"#currentvalueatpath($.Info2.Field6)\"}}}";
+            */
+            const string transformer = "{ \"GenericCustomer\": \"#applyover({'GenericCustomer1':{'#loop($.Customer)':{'GenericComponent1':'#currentvalueatpath($.Info1.Field1)'/,'GenericComponent2':'#currentvalueatpath($.Info1.Field2)'/,'GenericComponent3':'#currentvalueatpath($.Info1.Field3)'}}/,'GenericCustomer2':{'#loop($.Customer)':{'GenericComponent1':'#currentvalueatpath($.Info2.Field4)'/,'GenericComponent2':'#currentvalueatpath($.Info2.Field5)'/,'GenericComponent3':'#currentvalueatpath($.Info2.Field6)'}}}, '#concat(#valueof($.GenericCustomer1), #valueof($.GenericCustomer2))')\" }";
+            var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("{\"GenericCustomer\":[{\"GenericComponent1\":\"Value1\",\"GenericComponent2\":\"Value2\",\"GenericComponent3\":\"Value3\"},{\"GenericComponent1\":\"Value7\",\"GenericComponent2\":\"Value8\",\"GenericComponent3\":\"Value9\"},{\"GenericComponent1\":\"Value4\",\"GenericComponent2\":\"Value5\",\"GenericComponent3\":\"Value6\"},{\"GenericComponent1\":\"Value10\",\"GenericComponent2\":\"Value11\",\"GenericComponent3\":\"Value12\"}]}", result);
+        }
     }
 }
