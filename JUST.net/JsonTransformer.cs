@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using JUST.net.Selectables;
+using CSharpParserGenerator;
 
 namespace JUST
 {
@@ -111,8 +112,18 @@ namespace JUST
             return parentToken;
         }
 
-        #region RecursiveEvaluate
+        
+        private string TransformWithGrammar(string input)
+        {
+            ParseResult<string> result = Gramar.Grammar<string>.Instance.Parse(input);
+            if (!result.Success)
+            {
+                return string.Join('\n', result.Errors);
+            }
+            return result.Value;
+        }
 
+        #region RecursiveEvaluate
 
         private void RecursiveEvaluate(ref JToken parentToken, IDictionary<string, JArray> parentArray, IDictionary<string, JToken> currentArrayToken)
         {

@@ -38,6 +38,9 @@ namespace JUST
     {
         private Dictionary<string, MethodInfo> _customFunctions = new Dictionary<string, MethodInfo>();
         private int _defaultDecimalPlaces = 28;
+        private char _escapeChar = '/'; //do not use backslash, it is already the escape char in JSON
+        private char _splitGroupChar = ':';
+        private bool _useGrammar;
 
         internal JToken Input;
 
@@ -65,7 +68,24 @@ namespace JUST
             }
         }
 
+        public bool UseGrammar
+        {
+            get
+            {
+                return _useGrammar;
+            } 
+            set
+            {
+                _useGrammar = value;
+            }
+        }
+
         public JUSTContext() { }
+
+        public JUSTContext(bool useGrammar)
+        {
+            _useGrammar = useGrammar;
+        }
 
         public JUSTContext(IEnumerable<CustomFunction> customFunctions)
         {

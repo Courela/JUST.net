@@ -1223,7 +1223,7 @@ Output:
 ## <a name="registercustom"></a> Register User Defined methods for seamless use
 
 To reduce the fuzz of calling custom methods, there's this class `JUSTContext`, where you can register your custom functions, and then pass it as a parameter to `JsonTransformer` constructor. All calls of `Transform` methods will use the supplied `JUSTContext`.
-There's also this class `CustomFunction` that as all the necessary properties to register a custom function. One can create a list of there classes and pass it to `JUSTContext` constructor.
+There's also this class `CustomFunction` that has all the necessary properties to register a custom function. One can create a list of there classes and pass it to `JUSTContext` constructor.
 
 Examples:
 ```C#
