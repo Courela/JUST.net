@@ -45,7 +45,6 @@ namespace JUST
         internal JToken Input;
 
         public EvaluationMode EvaluationMode = EvaluationMode.FallbackToDefault;
-        private char _escapeChar = '/'; //do not use backslash, it is already the escape char in JSON
 
         public char EscapeChar { 
             get
