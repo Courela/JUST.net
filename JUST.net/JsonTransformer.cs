@@ -26,16 +26,16 @@ namespace JUST
             return Transform(transformerJson, DeserializeWithoutDateParse<JToken>(inputJson));
         }
 
-        private static string SerializeWithoutDateParse<T>(T obj)
+        private static string SerializeWithoutDateParse<TT>(TT obj)
         {
             var settings = new JsonSerializerSettings() { DateParseHandling = DateParseHandling.None };
             return JsonConvert.SerializeObject(obj, settings);
         }
 
-        private static T DeserializeWithoutDateParse<T>(string inputJson)
+        private static TT DeserializeWithoutDateParse<TT>(string inputJson)
         {
             var settings = new JsonSerializerSettings() { DateParseHandling = DateParseHandling.None };
-            return JsonConvert.DeserializeObject<T>(inputJson, settings);
+            return JsonConvert.DeserializeObject<TT>(inputJson, settings);
         }
 
         public string Transform(string transformerJson, JToken input)
@@ -110,17 +110,6 @@ namespace JUST
             var parentToken = (JToken)transformer;
             RecursiveEvaluate(ref parentToken, null, null);
             return parentToken;
-        }
-
-        
-        private string TransformWithGrammar(string input)
-        {
-            ParseResult<string> result = Gramar.Grammar<string>.Instance.Parse(input);
-            if (!result.Success)
-            {
-                return string.Join('\n', result.Errors);
-            }
-            return result.Value;
         }
 
         #region RecursiveEvaluate

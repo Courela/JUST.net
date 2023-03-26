@@ -1,0 +1,160 @@
+{
+    "test": 2,
+    "path": "$.menu.popup.menuitem[?(@.value=='Open')].onclick",
+    "menu": {
+        "popup": {
+            "menuitem": [{
+                "value": "Open",
+                "onclick": "OpenDoc()"
+              }, {
+                "value": "Close",
+                "onclick": "CloseDoc()"
+              }
+            ]
+        },
+        "host": "github",
+        "repository": "JUST",
+        "id": {
+            "file": "csv"
+          },
+          "value": {
+            "window": "popup"
+          }
+    },
+    "stringref": "thisisandveryunuasualandlongstring",
+    "stringref_result": "and",
+    "numbers": [ 1, 2, 3, 4, 5 ],
+    "decimal_nr": 123.456,
+    "d": [ "one", "two", "three" ],
+    "string_one": "one",
+    "x": [{
+        "v": {
+          "a": "a1,a2,a3",
+          "b": 1,
+          "c": 10
+        }
+      }, {
+        "v": {
+          "a": "b1,b2",
+          "b": 2,
+          "c": 20
+        }
+      }, {
+        "v": {
+          "a": "c1,c2,c3",
+          "b": 3,
+          "c": 30
+        }
+      }
+    ],
+    "booleans": {
+        "affirmative_string": "true",
+        "negative_string": "false",
+        "affirmative_int": 123,
+        "negative_int": 0
+    },
+    "strings": {
+        "integer": 123,
+        "decimal": 12.34,
+        "affirmative_boolean": true,
+        "negative_boolean": false
+    },
+    "integers": {
+        "string": "123",
+        "decimal": 1.23,
+        "affirmative_boolean": true,
+        "negative_boolean": false
+    },
+    "decimals": {
+        "integer": 123,
+        "string": "1.23"
+    },
+    "integer": 0,
+    "decimal": 1.23,
+    "boolean": true,
+    "string": "abc",
+    "array": [ "abc", "xyz" ],
+    "Forest": [{
+        "type": "Mammal",
+        "qty": 1,
+        "name": "Hippo"
+    }, {
+        "type": "Bird",
+        "qty": 2,
+        "name": "Sparrow"
+    }, {
+        "type": "Amphibian",
+        "qty": 300,
+        "name": "Lizard"
+    }, {
+        "type": "Bird",
+        "qty": 3,
+        "name": "Parrot"
+    }, {
+        "type": "Mammal",
+        "qty": 1,
+        "name": "Elephant"
+    }, {
+        "type": "Mammal",
+        "qty": 10,
+        "name": "Dog"
+    }
+  ],
+  "arrayobjects": [{
+      "country": {
+        "name": "norway",
+        "language": "norsk"
+      }
+    }, {
+      "country": {
+        "name": "UK",
+        "language": "english"
+      }
+    }, {
+      "country": {
+        "name": "Sweden",
+        "language": "swedish"
+      }
+    }
+  ],
+  "animals": {
+    "cat": {
+      "number_of_legs": 4,
+      "sound": "meow"
+    },
+    "dog": {
+      "number_of_legs": 4,
+      "sound": "woof"
+    },
+    "human": {
+      "number_of_legs": 2,
+      "sound": "@!#$?"
+    }
+  },
+  "drugs": [{ 
+      "code": "001", "display": "Drug1" 
+    },{
+      "code": "002", "display": "Drug2" 
+  }],
+  "pa": [{ 
+      "code": "pa1", "display": "PA1" 
+	},{
+      "code": "pa2", "display": "PA2" 
+  }],
+  "sa": [{ 
+      "code": "sa1", "display": "SA1" 
+	},{
+      "code": "sa2", "display": "SA2" 
+  }],
+  "bulk": {
+    "tree": {
+      "branch": {
+        "leaf": "green",
+        "flower": "red",
+        "bird": "crow",
+        "extra": { "twig":"birdnest" }
+      },
+      "ladder": {"wood": "treehouse" }
+    }
+  }
+}

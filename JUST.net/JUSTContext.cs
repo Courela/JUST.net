@@ -42,7 +42,7 @@ namespace JUST
         private char _splitGroupChar = ':';
         private bool _useGrammar;
 
-        internal JToken Input;
+        public JToken Input;
 
         public EvaluationMode EvaluationMode = EvaluationMode.FallbackToDefault;
 

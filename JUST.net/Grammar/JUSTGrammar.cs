@@ -1,23 +1,37 @@
+using System;
 using System.Collections.Generic;
 using CSharpParserGenerator;
+using JUST.net.Selectables;
+using Newtonsoft.Json.Linq;
+using System.Linq;
+using System.Collections;
 
 namespace JUST.Gramar
 {
     public class Grammar<T>
     {
-        private Parser<ELang> parser;
+        private Parser<ELang> _parser;
+
+        private string _arrayAlias;
+        private IDictionary<string, JToken> _currentArrayToken;
+        private IDictionary<string, JToken> _parentArrayToken;
+        private JUSTContext _context;
 
         private Grammar()
         {
-            if (parser == null)
+            if (this._parser == null)
             {
-                parser = GetParser();
+                this._parser = GetParser();
             }
         }
 
-        public ParseResult<T> Parse(string input)
+        public ParseResult<T> Parse(string expression, IDictionary<string, JToken> parentArrayToken, IDictionary<string, JToken> currentArrayToken, string arrayAlias, JUSTContext context)
         {
-            return this.parser.Parse<T>(input);
+            this._parentArrayToken = parentArrayToken;
+            this._currentArrayToken = currentArrayToken;
+            this._arrayAlias = arrayAlias;
+            this._context = context;
+            return this._parser.Parse<T>(expression);
         }
 
         public static Grammar<T> Instance
@@ -41,78 +55,37 @@ namespace JUST.Gramar
             Ignore,
 
             // Non-terminal
-            EXPR,
-            FUNC,
-            ARGS,
-            ARG,
+            EXPR,FUNC,ARGS,ARG,C_ARG,
 
             // Terminal
-            Sharp,
-            JsonPathEx,
-            LParenthesis,
-            RParenthesis,
-            Comma,
-            String,
-            Number,
+            Sharp,JsonPathEx,LParenthesis,RParenthesis,Comma,String,Number,
 
             //JUST Functions
             ValueOf,
             IfCondition,
-            LastIndexOf,
-            FirstIndexOf,
-            Substring,
-            Concat,
-            Length,
-            Add,
-            Subtract,
-            Multiply,
-            Divide,
-            Round,
+            StringAndMathFn,LastIndexOf,FirstIndexOf,Substring,Concat,Length,Add,Subtract,Multiply,Divide,Round,
 
-            StringEquals,
-            StringContains,
-            MathEquals,
-            MathGreaterThan,
-            MathLessThan,
-            MathGreaterThanOrEqualTo,
-            MathLessThanOrEqualTo,
+            Operators,StringEquals,StringContains,MathEquals,MathGreaterThan,MathLessThan,MathGreaterThanOrEqualTo,MathLessThanOrEqualTo,
 
-            Concatall,
-            Sum,
-            Average,
-            Min,
-            Max,
-            Concatallatpath,
-            Sumatpath,
-            Averageatpath,
-            Minatpath,
-            Maxatpath,
-            Tointeger,
-            Tostring,
-            Toboolean,
-            Todecimal,
-            Isnumber,
-            Isboolean,
-            Isstring,
-            Isarray,
-            Copy,
-            Replace,
-            Delete,
-            Loop,
-            Currentvalue,
-            Currentindex,
-            Currentproperty,
-            Lastindex,
-            Lastvalue,
-            Currentvalueatpath,
-            Lastvalueatpath,
+            Aggregate,Concatall,Sum,Average,Min,Max,
+
+            AggregateArray,Concatallatpath,Sumatpath,Averageatpath,Minatpath,Maxatpath,
+
+            TypeConversions,Tointeger,Tostring,Toboolean,Todecimal,
+
+            TypeCheck,Isnumber,Isboolean,Isstring,Isarray,
+
+            BulkFn,Copy,Replace,Delete,
+
+            ArrayLoop,Loop,Currentvalue,Currentindex,Currentproperty,Lastindex,Lastvalue,Currentvalueatpath,Lastvalueatpath,
+            
             Eval,
             Xconcat,
             Grouparrayby,
             Customfunction,
         }
         
-        private static Parser<ELang> GetParser()
+        private Parser<ELang> GetParser()
         {
             var tokens = new LexerDefinition<ELang>(new Dictionary<ELang, TokenRegex>
             {
@@ -138,11 +111,6 @@ namespace JUST.Gramar
                 [ELang.MathGreaterThanOrEqualTo] = "mathgreaterthanorequalto",
                 [ELang.MathLessThanOrEqualTo] = "mathlessthanorequalto",
 
-                [ELang.Concatall] = "concatall",
-                [ELang.Sum] = "sum",
-                [ELang.Average] = "average",
-                [ELang.Min] = "min",
-                [ELang.Max] = "max",
                 [ELang.Concatallatpath] = "concatallatpath",
                 [ELang.Sumatpath] = "sumatpath",
                 [ELang.Averageatpath] = "averageatpath",
@@ -167,11 +135,17 @@ namespace JUST.Gramar
                 [ELang.Lastvalue] = "lastvalue",
                 [ELang.Currentvalueatpath] = "currentvalueatpath",
                 [ELang.Lastvalueatpath] = "lastvalueatpath",
-                [ELang.Concat] = "concat",
                 [ELang.Eval] = "eval",
                 [ELang.Xconcat] = "xconcat",
                 [ELang.Grouparrayby] = "grouparrayby",
                 [ELang.Customfunction] = "customfunction",
+
+                //[ELang.AggregateFn] = "concatall|sum|average|min|max",
+                [ELang.Concatall] = "concatall",
+                [ELang.Sum] = "sum",
+                [ELang.Average] = "average",
+                [ELang.Min] = "min",
+                [ELang.Max] = "max",
                 
                 [ELang.Ignore] = "[ \\n]+",
                 [ELang.LParenthesis] = "\\(",
@@ -179,8 +153,8 @@ namespace JUST.Gramar
                 [ELang.Comma] = ",",
                 [ELang.Sharp] = "#",
                 [ELang.JsonPathEx] = "(?i)\\$[\\.a-z\\[\\]0-9_\\-]*",
+                [ELang.Number] = "\\d+\\.?\\d*",
                 [ELang.String] = "(?i)[a-z0-9_\\-\\.]+",
-                [ELang.Number] = "[\\d\\.]+",
             });
         
             // EXPR -> Sharp FUNC
@@ -207,77 +181,151 @@ namespace JUST.Gramar
                 },
                 [ELang.FUNC] = new Token[][]
                 {
-                    new Token[] { ELang.ValueOf, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.IfCondition, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.LastIndexOf, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.FirstIndexOf, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Substring, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Concat, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Length, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Add, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Subtract, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Multiply, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Divide, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Round, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.StringEquals, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.StringContains, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.MathEquals, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.MathGreaterThan, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.MathLessThan, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.MathGreaterThanOrEqualTo, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.MathLessThanOrEqualTo, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Concatall, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Sum, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Average, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Min, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Max, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Concatallatpath, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Sumatpath, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Averageatpath, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Minatpath, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Maxatpath, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Tointeger, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Tostring, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Toboolean, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Todecimal, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Isnumber, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Isboolean, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Isstring, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Isarray, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Copy, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Replace, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Delete, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Loop, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Currentvalue, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Currentindex, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Currentproperty, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Lastindex, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Lastvalue, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Currentvalueatpath, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Lastvalueatpath, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Concat, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Eval, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Xconcat, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Grouparrayby, ELang.LParenthesis, ELang.ARGS },
+                    new Token[] { ELang.ValueOf, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.IfCondition, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] == o[4] ? o[6] : o[8] )},
+                    new Token[] { ELang.StringAndMathFn },
+                    new Token[] { ELang.Operators },
+                    new Token[] { ELang.Aggregate },
+                    new Token[] { ELang.AggregateArray },
+                    new Token[] { ELang.TypeConversions },
+                    new Token[] { ELang.TypeCheck },
+                    new Token[] { ELang.BulkFn },
+                    new Token[] { ELang.ArrayLoop },
+                    
+                    new Token[] { ELang.Eval, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = o[2] )},
+                    new Token[] { ELang.Xconcat, ELang.LParenthesis, ELang.ARG, ELang.C_ARG, ELang.RParenthesis, new Op(o => o[0] = Xconcat(o[2], o[3])  )},
+                    new Token[] { ELang.Grouparrayby, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], o[4], o[6], this._context }) )},
                     new Token[] { ELang.Customfunction, ELang.LParenthesis, ELang.ARGS },
                     new Token[] { ELang.String, ELang.LParenthesis, ELang.ARGS },
                 },
-                
+
+                [ELang.StringAndMathFn] = new Token[][]
+                {
+                    new Token[] { ELang.LastIndexOf, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2].LastIndexOf(o[4]) )},
+                    new Token[] { ELang.FirstIndexOf, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2].IndexOf(o[4]) )},
+                    new Token[] { ELang.Substring, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2].Substring(Convert.ToInt32(o[4]), Convert.ToInt32(o[6])) )},
+                    new Token[] { ELang.Concat, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], o[4], this._context}) )},
+                    new Token[] { ELang.Length, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.Add, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] + o[4] )},
+                    new Token[] { ELang.Subtract, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] - o[4] )},
+                    new Token[] { ELang.Multiply, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] * o[4] )},
+                    new Token[] { ELang.Divide, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] / o[4] )},
+                    new Token[] { ELang.Round, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = decimal.Round(Convert.ToDecimal(o[2]), Convert.ToInt32(o[4]), MidpointRounding.AwayFromZero) )},
+                },
+                [ELang.Operators] = new Token[][]
+                {
+                    new Token[] { ELang.MathEquals, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] == o[4] )},
+                    new Token[] { ELang.MathGreaterThan, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] > o[4] )},
+                    new Token[] { ELang.MathLessThan, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] < o[4] )},
+                    new Token[] { ELang.MathGreaterThanOrEqualTo, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] >= o[4] )},
+                    new Token[] { ELang.MathLessThanOrEqualTo, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] <= o[4] )},
+                    new Token[] { ELang.StringEquals, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2].ToString() == o[4].ToString() )},
+                    new Token[] { ELang.StringContains, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2].ToString().Contains(o[4].ToString()) )},
+                },
+                [ELang.Aggregate] = new Token[][]
+                {
+                    //new Token[] { ELang.AggregateFn, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.Concatall, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.Sum, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.Average, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.Min, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.Max, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
+                },
+                [ELang.AggregateArray] = new Token[][]
+                {
+                    new Token[] { ELang.Concatallatpath, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], o[4], this._context}) )},
+                    new Token[] { ELang.Sumatpath, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], o[4], this._context}) )},
+                    new Token[] { ELang.Averageatpath, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], o[4], this._context}) )},
+                    new Token[] { ELang.Minatpath, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], o[4], this._context}) )},
+                    new Token[] { ELang.Maxatpath, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], o[4], this._context}) )},
+                },
+                [ELang.TypeConversions] = new Token[][]
+                {
+                    new Token[] { ELang.Tointeger, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = ReflectionHelper.GetTypedValue(typeof(int), o[2], this._context.EvaluationMode) )},
+                    new Token[] { ELang.Tostring, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = ReflectionHelper.GetTypedValue(typeof(string), o[2], this._context.EvaluationMode) )},
+                    new Token[] { ELang.Toboolean, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = ReflectionHelper.GetTypedValue(typeof(bool), o[2], this._context.EvaluationMode)) },
+                    new Token[] { ELang.Todecimal, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = ReflectionHelper.GetTypedValue(typeof(decimal), o[2], this._context.EvaluationMode)) },
+                },
+                [ELang.TypeCheck] = new Token[][]
+                {
+                    new Token[] { ELang.Isnumber, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.Isboolean, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = o[2].GetType() == typeof(bool) )},
+                    new Token[] { ELang.Isstring, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = o[2].GetType() == typeof(string) )},
+                    new Token[] { ELang.Isarray, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = o[2].GetType().IsArray )},
+                },
+                [ELang.BulkFn] = new Token[][]
+                {
+                    new Token[] { ELang.Copy, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke("valueof", true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.Replace, ELang.LParenthesis, ELang.ARGS },
+                    new Token[] { ELang.Delete, ELang.LParenthesis, ELang.ARGS },
+                },
+                [ELang.ArrayLoop] = new Token[][]
+                {
+                    new Token[] { ELang.Loop, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke("valueof", true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.Currentvalue, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { null, this._currentArrayToken[this._arrayAlias] }) )},
+                    new Token[] { ELang.Currentindex, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { this._parentArrayToken[this._arrayAlias], this._currentArrayToken[this._arrayAlias] }) )},
+                    new Token[] { ELang.Currentproperty, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { null, this._currentArrayToken[this._arrayAlias], this._context }) )},
+                    new Token[] { ELang.Lastindex, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { this._parentArrayToken[this._arrayAlias], this._currentArrayToken[this._arrayAlias] }) )},
+                    new Token[] { ELang.Lastvalue, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { this._parentArrayToken[this._arrayAlias], this._currentArrayToken[this._arrayAlias] }) )},
+                    new Token[] { ELang.Currentvalueatpath, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { null, this._currentArrayToken[this._arrayAlias], o[2], this._context }) )},
+                    new Token[] { ELang.Lastvalueatpath, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { this._parentArrayToken[this._arrayAlias], this._currentArrayToken[this._arrayAlias], o[2], this._context }) )},
+                },
+
+                [ELang.C_ARG] = new Token[][]
+                {
+                    new Token[] { ELang.Comma, ELang.ARG, ELang.C_ARG, new Op(o => o[0] = Xconcat(o[1], o[2])) },
+                    new Token[] { ELang.Comma, ELang.ARG, new Op(o => o[0] = o[1] ) },
+                },
+
                 [ELang.ARGS] = new Token[][]
                 {
-                    new Token[] { ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] += 1) },
-                    new Token[] { ELang.ARG, ELang.RParenthesis, new Op(o => o[0] += 1) },
+                    new Token[] { ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Xconcat(o[0], o[2]) ) },
+                    new Token[] { ELang.ARG, ELang.RParenthesis },
                 },
                 [ELang.ARG] = new Token[][]
                 {
-                    new Token[] { ELang.EXPR, new Op(o => o[0] = 0) },
-                    new Token[] { ELang.JsonPathEx, new Op(o => o[0] = 0) },
-                    new Token[] { ELang.String, new Op(o => o[0] = 0) },
-                    new Token[] { ELang.Number, new Op(o => o[0] = 0) },
+                    new Token[] { ELang.EXPR },
+                    new Token[] { ELang.JsonPathEx },
+                    new Token[] { ELang.Number, new Op(o => o[0] = Convert.ToDecimal(o[0]) )},
+                    new Token[] { ELang.String },
                     new Token[] {},
                 },
             });
             return new ParserGenerator<ELang>(new Lexer<ELang>(tokens, ELang.Ignore), rules).CompileParser();
+        }
+
+        private object Invoke(string fn, bool convertParameters, object[] parameters)
+        {
+            return ReflectionHelper.Caller<JsonPathSelectable>(null, "JUST.Transformer`1", fn, parameters, convertParameters, this._context);
+        }
+
+        private object Xconcat(dynamic arg1, dynamic arg2)
+        {
+            if (arg1 is Array arr1)
+            {
+                List<object> result = new List<object>();
+                foreach (var o in arr1)
+                {
+                    result.Add(o);
+                }
+                if(arg2 is Array arr) 
+                {
+                    foreach (var o in arr)
+                    {
+                        result.Add(o);
+                    }
+                }
+                else 
+                {
+                    result.Add(arg2);
+                }
+                return result.ToArray();
+            }
+            else 
+            {
+                return arg1 + arg2;
+            }
+
         }
     }
 }
