@@ -156,5 +156,6 @@
       },
       "ladder": {"wood": "treehouse" }
     }
-  }
+  },
+  "empty": ""
 }

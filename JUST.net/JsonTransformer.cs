@@ -357,7 +357,6 @@ namespace JUST
                 JToken selectedToken = selectable.Select(tokenToReplace.Key);
                 selectedToken.Replace(tokenToReplace.Value);
             }
-
         }
 
         private static void LoopPostOperationBuildUp(ref JToken parentToken, List<string> condProps, List<string> loopProperties, JArray arrayToForm, JObject dictToForm)

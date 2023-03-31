@@ -101,7 +101,13 @@ namespace JUST.UnitTests.Gramar
         [TestCase("#isstring(#valueof($.array))", false)]
         [TestCase("#isarray(#valueof($.array))", true)]
         [TestCase("#isarray(#valueof($.decimal))", false)]
-          [TestCase("#eval(prop)", "prop")]
+        [TestCase("#exists($.bulk.tree.branch)", true)]
+        [TestCase("#exists($.dummy.not.exists)", false)]
+        [TestCase("#existsandnotempty($.bulk.tree.branch.leaf)", true)]
+        [TestCase("#existsandnotempty($.empty)", false)]
+        [TestCase("#ifgroup(#exists($.bulk.tree.branch))", true)]
+        [TestCase("#ifgroup(#exists($.dummy.not.exists))", false)]
+        [TestCase("#eval(prop)", "prop")]
           //[TestCase("#grouparrayby($.Forest,type,all)")]
         // [TestCase("#customfunction(JUST.NET.Test,JUST.NET.Test.Season.findseason,#valueof($.tree.branch.leaf),#valueof($.tree.branch.flower))")]
         // [TestCase("#declared_function(dummy_arg)")]
@@ -151,7 +157,6 @@ namespace JUST.UnitTests.Gramar
             });
         }
 
-        // [TestCase("#delete($.tree.branch.bird)")]
         [Test]
         public void ValidateGrammarReplace()
         {
@@ -161,7 +166,7 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input.SelectToken("$.bulk"),
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<object[]> parseResult = JUST.Gramar.Grammar<object[]>.Instance.Parse(
+            ParseResult<JObject> parseResult = JUST.Gramar.Grammar<JObject>.Instance.Parse(
                 expression,
                 null,
                 null,
@@ -171,9 +176,47 @@ namespace JUST.UnitTests.Gramar
             PrintResults(parseResult);
 
             JToken result = JToken.Parse(
-                "{ \"tree\": { \"branch\": { " +
-                                    "\"leaf\": \"green\", \"flower\": \"red\", \"bird\": \"crow\", \"extra\": { " +
-                                        "\"ladder\": { \"wood\": \"treehouse\" } } }, \"ladder\": { \"wood\": \"treehouse\" } }");
+                "{ \"tree\": {" +
+                    "\"branch\": { " +
+                        "\"leaf\": \"green\"," +
+                        "\"flower\": \"red\"," +
+                        "\"bird\": \"crow\"," +
+                        "\"extra\": { " +
+                            "\"wood\": \"treehouse\" } }," +
+                    "\"ladder\": { \"wood\": \"treehouse\" } } }");
+            Assert.Multiple(() => {
+                Assert.AreEqual(0, parseResult.Errors.Count);
+                Assert.True(parseResult.Success);
+                Assert.AreEqual(result, parseResult.Value);
+            });
+        }
+
+        [Test]
+        public void ValidateGrammarDelete()
+        {
+            const string expression = "#delete($.tree.branch.bird)";
+            JUSTContext context = new JUSTContext(true)
+            {
+                Input = this._input.SelectToken("$.bulk"),
+                EvaluationMode = EvaluationMode.Strict,
+            };
+            ParseResult<JObject> parseResult = JUST.Gramar.Grammar<JObject>.Instance.Parse(
+                expression,
+                null,
+                null,
+                null,
+                context);
+            
+            PrintResults(parseResult);
+
+            JToken result = JToken.Parse(
+                "{ \"tree\": {" +
+                    "\"branch\": { " +
+                        "\"leaf\": \"green\"," +
+                        "\"flower\": \"red\"," +
+                        "\"extra\": { " +
+                            "\"twig\": \"birdnest\" } }," +
+                    "\"ladder\": { \"wood\": \"treehouse\" } } }");
             Assert.Multiple(() => {
                 Assert.AreEqual(0, parseResult.Errors.Count);
                 Assert.True(parseResult.Success);

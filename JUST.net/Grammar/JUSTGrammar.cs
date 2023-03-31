@@ -79,6 +79,9 @@ namespace JUST.Gramar
 
             ArrayLoop,Loop,Currentvalue,Currentindex,Currentproperty,Lastindex,Lastvalue,Currentvalueatpath,Lastvalueatpath,
             
+            Exists,
+            ExistsNotEmpty,
+            IfGroup,
             Eval,
             Xconcat,
             Grouparrayby,
@@ -135,6 +138,9 @@ namespace JUST.Gramar
                 [ELang.Lastvalue] = "lastvalue",
                 [ELang.Currentvalueatpath] = "currentvalueatpath",
                 [ELang.Lastvalueatpath] = "lastvalueatpath",
+                [ELang.Exists] = "exists",
+                [ELang.ExistsNotEmpty] = "existsandnotempty",
+                [ELang.IfGroup] = "ifgroup",
                 [ELang.Eval] = "eval",
                 [ELang.Xconcat] = "xconcat",
                 [ELang.Grouparrayby] = "grouparrayby",
@@ -192,6 +198,9 @@ namespace JUST.Gramar
                     new Token[] { ELang.BulkFn },
                     new Token[] { ELang.ArrayLoop },
                     
+                    new Token[] { ELang.Exists, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = (Invoke("valueof", true, new object[] { o[2], this._context }) != null) )},
+                    new Token[] { ELang.ExistsNotEmpty, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.IfGroup, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = o[2] )},
                     new Token[] { ELang.Eval, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = o[2] )},
                     new Token[] { ELang.Xconcat, ELang.LParenthesis, ELang.ARG, ELang.C_ARG, ELang.RParenthesis, new Op(o => o[0] = Xconcat(o[2], o[3])  )},
                     new Token[] { ELang.Grouparrayby, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], o[4], o[6], this._context }) )},
@@ -256,8 +265,8 @@ namespace JUST.Gramar
                 [ELang.BulkFn] = new Token[][]
                 {
                     new Token[] { ELang.Copy, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke("valueof", true, new object[] { o[2], this._context }) )},
-                    new Token[] { ELang.Replace, ELang.LParenthesis, ELang.ARGS },
-                    new Token[] { ELang.Delete, ELang.LParenthesis, ELang.ARGS },
+                    new Token[] { ELang.Replace, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Replace(o[2], o[4]) )},
+                    new Token[] { ELang.Delete, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Delete(o[2]) )},
                 },
                 [ELang.ArrayLoop] = new Token[][]
                 {
@@ -297,6 +306,20 @@ namespace JUST.Gramar
         private object Invoke(string fn, bool convertParameters, object[] parameters)
         {
             return ReflectionHelper.Caller<JsonPathSelectable>(null, "JUST.Transformer`1", fn, parameters, convertParameters, this._context);
+        }
+
+        private dynamic Replace(dynamic arg1, dynamic arg2)
+        {
+            object arg1Val = Invoke("valueof", true, new object[] { arg1, this._context });
+            (arg1Val as JToken).Replace(arg2 as JToken);
+            return this._context.Input;
+        }
+
+        private dynamic Delete(dynamic arg1)
+        {
+            JToken toRemove = this._context.Input.SelectToken(arg1);
+            toRemove.Ancestors().First().Remove();
+            return this._context.Input; 
         }
 
         private object Xconcat(dynamic arg1, dynamic arg2)
