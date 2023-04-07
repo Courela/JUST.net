@@ -4,7 +4,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
 trigger:
-- master
+- develop
 
 pool:
   vmImage: 'windows-latest'
@@ -32,3 +32,13 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+    testAssemblyVer2: |
+      **\UnitTestForExternalAssemblyBug.dll
+      **\JUST.net.UnitTests.dll
+      !**/*TestAdapter.dll
+      !**/obj/**
+    # testFiltercriteria: 'TestCategory=ReadMe|TestCategory=CustomFunctions'
+    # diagnosticsEnabled: true
+    failOnMinTestsNotRun: true
+    codeCoverageEnabled: true
+    

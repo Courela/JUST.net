@@ -15,10 +15,16 @@ This C# project has working examples of the transformations.
 **Types are now supported**. [New functions](#typeconversions) were added to provide type conversions.
 Also a new enum field called `EvaluationMode` was added to `JUSTContext`, which lets you select how type mismatches are handled:
 - option `Strict` mode will throw an exception on error;
-- option `FallbackToDefault` will return the default value for the return type of the function/expression being evaluated
+- option `FallbackToDefault` will return the default value for the return type of the function/expression being evaluated;
+- option `LookInTransformed` will make 'transformer' argument available to perform functions over it (one can perform actions over previously calculated properties, [example here](#lookintransformed));
 
 There's also an option to tell how #copy will behave:
-- option `AddOrReplaceProperties` will add or replace any property that may be present both in #copy and transformer.
+- option `AddOrReplaceProperties` will add or replace any property that may be present both in #copy and transformer;
+
+And an option to tell how arrays are handled:
+- option `JoinArrays` will join nested levels of arrays
+
+These options can be used together, as `EvaluationMode` is an enum flag.
 
 **New query languages accepted** besides [JsonPath](https://goessner.net/articles/JsonPath/). All you have to do is create a class that implements `ISelectableToken` and call generic `Transform` method with your type.
 [JmesPath](http://jmespath.org/) is included as an alternative ([example here](#jmesexample)).
@@ -62,8 +68,8 @@ string transformedString = new JsonTransformer().Transform(transformer, input);
 
 // with context
 JUSTContext context = new JUSTContext 
-{ 
-  EvaluationMode = EvaluationMode.Strict,
+{
+  EvaluationMode = EvaluationMode.AddOrReplaceProperties | EvaluationMode.Strict | EvaluationMode.JoinArrays | EvaluationMode.LookInTransformed,
   DefaultDecimalPlaces = 4
 };
 string transformedString = new JsonTransformer(context).Transform(transformer, input);
@@ -72,11 +78,24 @@ string transformedString = new JsonTransformer(context).Transform(transformer, i
 string transformedString = new JsonTransformer<JmesPathSelectable>.Transform(transformer, input);
 ```
 
+# <a name="benchmark"></a> Benchmark results
+One can find the benchmark results [here](Benchmark/BenchmarkDotNet.Artifacts/results/JSonTransformerBenchmark.Benchmarks-report-github.md).
+
+
 # <a name="using"></a> Using JUST to transform JSON
 
 JUST is a transformation language just like XSLT. It includes functions which are used inside the transformer JSON to transform the input JSON in a desired output JSON. This section describes the various functions present in JUST and how they can be used to transform your JSON.
 
-Every JUST function starts with "#" character.
+Every JUST function starts with "#" character and must start at the begininng of the expression or at the beginning of an argument.
+
+Example:
+
+```JSON
+{
+  "valid_function": "#valueof(#xconcat($.prop[,other_prop_or_filter,]))",
+  "not_a_function": "some_sentence_at_the_beginning_invalidates_evaluation_#xconcat(sencence,_argument_not_evaluated_#valueof($.prop)_does_not_start_with_#)"
+}
+```
 
 ## <a name="valueof"></a> valueof
 
@@ -97,7 +116,7 @@ Consider the input:
           "onclick": "CloseDoc()"
         }
       ],
-	  "submenuitem": "CloseSession()"
+      "submenuitem": "CloseSession()"
     }
   }
 }
@@ -120,7 +139,7 @@ Output:
 {
   "result": {
     "Open": "OpenDoc()",
-	"Close": "CloseDoc()"
+    "Close": "CloseDoc()"
   }
 }
 ```
@@ -231,16 +250,16 @@ Transformer:
     "firstindexofand": "#firstindexof(#valueof($.stringref),and)",
     "substring": "#substring(#valueof($.stringref),9,11)",
     "concat": "#concat(#valueof($.menu.id.file),#valueof($.menu.value.Window))",
-	"length_string": "#length(#valueof($.stringref))",
-	"length_array": "#length(#valueof($.numbers))",
-	"length_path": "#length($.numbers)"
+    "length_string": "#length(#valueof($.stringref))",
+    "length_array": "#length(#valueof($.numbers))",
+    "length_path": "#length($.numbers)"
   },
   "mathresult": {
     "add": "#add(#valueof($.numbers[0]),3)",
     "subtract": "#subtract(#valueof($.numbers[4]),#valueof($.numbers[0]))",
     "multiply": "#multiply(2,#valueof($.numbers[2]))",
     "divide": "#divide(9,3)",
-	"round": "#round(10.005,2)"
+    "round": "#round(10.005,2)"
   }
 }
 ```
@@ -254,16 +273,16 @@ Output:
     "firstindexofand": 6,
     "substring": "veryunuasua",
     "concat":"",
-	"length_string": 34,
-	"length_array": 5,
-	"length_path": 5
+    "length_string": 34,
+    "length_array": 5,
+    "length_path": 5
   },
   "mathresult": {
     "add": 4,
     "subtract": 4,
     "multiply": 6,
     "divide": 3,
-	"round": 10.01
+    "round": 10.01
   }
 }
 ```
@@ -366,7 +385,7 @@ Output:
 
 ## <a name="multiarrays"></a> Aggregate functions for multidimensional arrays:
 
-These functions are essentially the same as the above ones, the only difference being that you can also provide a path to point to particluar element inside the array.
+These functions are essentially the same as the above ones, the only difference being that you can also provide a path to point to particular element inside the array.
 1. concatallatpath(array,path)
 2. sumatpath(array,path)
 3. averageatpath(array,path)
@@ -700,9 +719,9 @@ Cosider the input:
     }
   },
   "spell_numbers": {
-	"3": "three",
+    "3": "three",
     "2": "two",
-	"1": "one"
+    "1": "one"
   }
 }
 ```
@@ -728,14 +747,14 @@ Transformer:
     }
   },
   "sounds": { 
-	"#loop($.animals)": { 
-		"#eval(#currentproperty())": "#currentvalueatpath($..sound)" 
-	} 
+    "#loop($.animals)": { 
+        "#eval(#currentproperty())": "#currentvalueatpath($..sound)" 
+    } 
   },
   "number_index": { 
     "#loop($.spell_numbers)": { 
-	  "#eval(#currentindex())": "#currentvalueatpath(#concat($.,#currentproperty()))" 
-	} 
+      "#eval(#currentindex())": "#currentvalueatpath(#concat($.,#currentproperty()))" 
+    } 
   },
   "othervalue": "othervalue"
 }
@@ -786,13 +805,13 @@ Output:
   ],
   "sounds": {
     "cat": "meow",
-	"dog": "woof",
-	"human": "@!#$?"
+    "dog": "woof",
+    "human": "@!#$?"
   },
   "number_index": {
     "0": "three",
-	"1": "two",
-	"2": "one"
+    "1": "two",
+    "2": "one"
   },
   "othervalue": "othervalue"
 }
@@ -803,6 +822,8 @@ When a concatenation is needed, one can use #concat or #xconcat to join two arra
 1. concat(object1, object2)
 2. xconcat(object1,object2......objectx)
 
+Input:
+
 ```JSON
 {
   "drugs": [{ 
@@ -812,34 +833,38 @@ When a concatenation is needed, one can use #concat or #xconcat to join two arra
   }],
   "pa": [{ 
       "code": "pa1", "display": "PA1" 
-	},{
+    },{
       "code": "pa2", "display": "PA2" 
   }],
   "sa": [{ 
       "code": "sa1", "display": "SA1" 
-	},{
+    },{
       "code": "sa2", "display": "SA2" 
   }]
 }
 ```
 
-```Transformer
+Transformer:
+
+```JSON
 {
   "concat": "#concat(#valueof($.drugs), #valueof($.pa))", 
-  "multipleConcat": "#concat(#concat(#valueof($.drugs), #valueof($.pa)), #valueof($.sa))\",
+  "multipleConcat": "#concat(#concat(#valueof($.drugs), #valueof($.pa)), #valueof($.sa))",
   "xconcat": "#xconcat(#valueof($.drugs), #valueof($.pa), #valueof($.sa))" 
 }
 ```
 
-```Output
+Output:
+
+```JSON
 {
   "concat": [{
       "code": "001", "display": "Drug1" 
-	},{
+    },{
       "code": "002", "display": "Drug2" 
     },{
       "code": "pa1", "display": "PA1" 
-	},{ 
+    },{ 
       "code": "pa2", "display": "PA2" 
   }],
   "multipleConcat": [{ 
@@ -853,8 +878,8 @@ When a concatenation is needed, one can use #concat or #xconcat to join two arra
     },{ 
       "code": "sa1", "display": "SA1"
     },{ 
-	  "code": "sa2", "display": "SA2"
-	}],
+      "code": "sa2", "display": "SA2"
+    }],
   "xconcat": [{ 
       "code": "001", "display": "Drug1" 
     },{
@@ -873,6 +898,7 @@ When a concatenation is needed, one can use #concat or #xconcat to join two arra
 
 ## <a name="nestedarrays"></a> Nested array looping
 It is possible to loop over more than one array at once. By default, the last array is used, but one can use properties from other arrays by using alias for array looping.
+There's a special alias 'root', that refers to the whole input.
 One side note: loops must be last property, any properties after that will be ignored.
 
 Cosider the input:
@@ -882,19 +908,19 @@ Cosider the input:
     "Organization": {
       "Employee": [{
           "Name": "E2",
-		  "Surname": "S2",
+          "Surname": "S2",
           "Details": [{
               "Countries": [{
-			      "Name": "Iceland",
+                  "Name": "Iceland",
                   "Language": "Icelandic"
                 }
-			  ],
+              ],
               "Age": "30"
             }
           ]
         }, {
           "Name": "E1",
-		  "Surname": "S1",
+          "Surname": "S1",
           "Details": [{
               "Countries": [{
                   "Name": "Denmark",
@@ -924,7 +950,7 @@ Transformer:
       "Details": {
         "#loop($.Details)": {
           "Surname": "#currentvalueatpath($.Surname, employees)",
-		  "Age": "#currentvalueatpath($.Age)",
+          "Age": "#currentvalueatpath($.Age)",
           "Country": {
             "#loop($.Countries[0], countries)": "#currentvalueatpath($.Name, countries)"
           }
@@ -944,8 +970,8 @@ Output:
       "CurrentName": "E2",
       "Details": [{
           "Surname": "S2",
-		  "Age": 30,
-		  "Country": [ "Iceland" ]
+          "Age": 30,
+          "Country": [ "Iceland" ]
         }
       ]
     }, {
@@ -1047,7 +1073,8 @@ Output:
 }
 ```
 
-You can group using multiple "grouping elements". They should be seperated by a semicolon (:)
+You can group using multiple "grouping elements".
+Default character for separating them is colon (:) but one can define other character setting property 'SpiltGroupChar' in 'JUSTContext' class (just like [Escaping reserved char](#escaping))
 
 Input:
 
@@ -1301,12 +1328,12 @@ Transformer:
   "Contact Information": {
     "Street Name": "#substring(#valueof($.ContactInformation),0,#firstindexof(#valueof($.ContactInformation),:))",
     "City": "#substring(#valueof($.ContactInformation),#add(#firstindexof(#valueof($.ContactInformation),:),1),#subtract(#subtract(#lastindexof(#valueof($.ContactInformation),:),#firstindexof(#valueof($.ContactInformation),:)),1))",
-    "PhoneNumber": "#substring(#valueof($.ContactInformation),#add(#lastindexof(#valueof($.ContactInformation),:),1),#subtract(#lastindexof(#valueof($.ContactInformation),),#lastindexof(#valueof($.ContactInformation),:)))"
+    "PhoneNumber": "#substring(#valueof($.ContactInformation),#add(#lastindexof(#valueof($.ContactInformation),:),1),#subtract(#subtract(#length(#valueof($.ContactInformation)),1),#lastindexof(#valueof($.ContactInformation),:)))"
   },
   "Personal Information": {
     "Age": "#substring(#valueof($.PersonalInformation),0,#firstindexof(#valueof($.PersonalInformation),:))",
     "Civil Status": "#substring(#valueof($.PersonalInformation),#add(#firstindexof(#valueof($.PersonalInformation),:),1),#subtract(#subtract(#lastindexof(#valueof($.PersonalInformation),:),#firstindexof(#valueof($.PersonalInformation),:)),1))",
-    "Ethnicity": "#substring(#valueof($.PersonalInformation),#add(#lastindexof(#valueof($.PersonalInformation),:),1),#subtract(#lastindexof(#valueof($.PersonalInformation),),#lastindexof(#valueof($.PersonalInformation),:)))"
+    "Ethnicity": "#substring(#valueof($.PersonalInformation),#add(#lastindexof(#valueof($.PersonalInformation),:),1),#subtract(#subtract(#length(#valueof($.PersonalInformation)),1),#lastindexof(#valueof($.PersonalInformation),:)))"
   }
 }
 ```
@@ -1332,15 +1359,16 @@ Output:
 ## <a name="multiargsconstants"></a> Multiple argument & constant functions
 
 The transformation in the above scenario looks quite complex. And it could get quite messy when the string becomes longer.
-Some reserved keywords, like comma (,) and hash (#), have a proper function. Also empty string has a proper function so it can be represented.
+Some reserved keywords, like comma (,) and hash (#), have a proper function. Also empty string and empty array has proper functions so they can be represented.
 
-Hence, the following 5 functions have been introduced:
+Hence, the following 6 functions have been introduced:
 
 1. xconcat(string1,string2......stringx) - Concatenates multiple strings.
 2. xadd(int1,int2......intx) - Adds multiples integers.
 3. constant_comma() - Returns comma(,)
 4. constant_hash() - Returns hash(#)
 5. stringempty() - Returns ""
+6. arrayempty() - Returns []
 
 Consider the following input:
 
@@ -1353,7 +1381,8 @@ Consider the following input:
   "PersonalInformation": "45:Married:Norwegian",
   "AgeOfMother": 67,
   "AgeOfFather": 70,
-  "Empty": ""
+  "EmptyString": "",
+  "EmptyArray": []
 }
 ```
 
@@ -1363,8 +1392,10 @@ Transformer:
 {
   "FullName": "#xconcat(#valueof($.Name),#constant_comma(),#valueof($.MiddleName),#constant_comma(),#valueof($.Surname))",
   "AgeOfParents": "#xadd(#valueof($.AgeOfMother),#valueof($.AgeOfFather))",
-  "TestSomeEmptyString": "#ifcondition(#valueof($.Empty),#stringempty(),String is empty,String is not empty)",
-  "TestSomeOtherString": "#ifcondition(#valueof($.Name),#stringempty(),String is empty,String is not empty)"
+  "TestSomeEmptyString": "#ifcondition(#valueof($.EmptyString),#stringempty(),String is empty,String is not empty)",
+  "TestSomeOtherString": "#ifcondition(#valueof($.Name),#stringempty(),String is empty,String is not empty)",
+  "TestEmptyArray": "#ifcondition(#valueof($.EmptyArray),#arrayempty(),Array is empty,Array is not empty)",
+  "ReturnEmptyArray": "#ifcondition(#valueof($.Name),Kari,#arrayempty(),Name is not Kari)"
 }
 ```
 
@@ -1375,7 +1406,9 @@ Output:
   "FullName":"Kari,Inger,Nordmann",
   "AgeOfParents": 137,
   "TestSomeEmptyString": "String is empty",
-  "TestSomeOtherString": "String is not empty"
+  "TestSomeOtherString": "String is not empty",
+  "TestEmptyArray": "Array is empty",
+  "ReturnEmptyArray": []
 }
 ```
 
@@ -1393,12 +1426,13 @@ Consider the following input:
 {
   "arg": 1,
   "arr": [{
-	"id": 1,
-	"val": 100
-  },{
-	"id": 2,
-	"val": 200
-  }]
+      "id": 1,
+      "val": 100
+    },{
+      "id": 2,
+      "val": 200
+    }
+  ]
 }
 ```
 
@@ -1499,7 +1533,7 @@ Transformer:
         "Value2": "#valueof($.Tree.Flower)"
       }
     },
-	"Shrubs": [ "#ifgroup(#ifcondition(#valueof($.Tree.Flower),Rose,True,False),#valueof($.Tree.Flower))" ]
+    "Shrubs": [ "#ifgroup(#ifcondition(#valueof($.Tree.Flower),Rose,True,False),#valueof($.Tree.Flower))" ]
   }
 }
 ```
@@ -1513,7 +1547,7 @@ Output:
       "Value1": "leaf",
       "Value2": "Rose"
     },
-	"Shrubs": [ "Rose" ]
+    "Shrubs": [ "Rose" ]
   }
 }
 ```
@@ -1532,7 +1566,7 @@ Transformer:
         "Value2": "#valueof($.Tree.Flower)"
       }
     },
-	"Shrubs": [ "#ifgroup(#ifcondition(#valueof($.Tree.Flower),Olive,True,False),#valueof($.Tree.Flower))" ]
+    "Shrubs": [ "#ifgroup(#ifcondition(#valueof($.Tree.Flower),Olive,True,False),#valueof($.Tree.Flower))" ]
   }
 }
 ```
@@ -1542,7 +1576,7 @@ Output:
 {  
   "Result":{  
     "Header": "JsonTransform",
-	"Shrubs": [ ]
+    "Shrubs": [ ]
   }
 }
 ```
@@ -1586,6 +1620,8 @@ Output:
 ## <a name="applyover"></a> Apply function over transformation
 
 Sometimes you cannnot achieve what you want directly from a single function (or composition). To overcome this you may want to apply a function over a previous transformation. That's what #applyover does.
+First argument is the first transformation to apply to input, and the result will serve as input to the second argument/transformation. Second argument can be a simple function or a complex transformation (an object or an array).
+Bare in mind that every special character (comma, parenthesis) must be escaped if they appear inside the second argument/transformation.
 
 Consider the following input:
 
@@ -1600,14 +1636,156 @@ Transformer:
 
 ```JSON
 {
-  "result": "#applyover({ 'condition': { '#loop($.values)': { 'test': '#ifcondition(#stringcontains(#valueof($.d[0]),#currentvalue()),True,yes,no)' } } }, '#exists($.condition[?(@.test=='yes')])')" 
+  "simple_function": "#applyover({ 'condition': { '#loop($.values)': { 'test': '#ifcondition(#stringcontains(#valueof($.d[0]),#currentvalue()),True,yes,no)' } } }, '#exists($.condition[?(@.test=='yes')])')",
+  "object": "#applyover(#xconcat({ 'temp': { '#loop($.values)': { 'index': '#currentindex()', #constant_comma(), 'value': '#currentvalue()' } } }), { 'first_element': '#valueof($.temp[0])' })",
+  "array": "#applyover(#xconcat({ '#loop($.d)': { 'index': '#currentindex()', #constant_comma(), 'value': '#currentvalue()' } }), { 'last_element': '#valueof($[2])' })" }"
 }
 ```
 
 Output:
 ```JSON
 {
-  "result": true
+  "simple_function": true,
+  "object": {
+    "first_element": {
+      "index":0,
+      "value": "z"
+    }
+  },
+  "array": {
+    "last_element": {
+      "index": 2,
+      "value": "three"
+    }
+  }
+}
+```
+
+## <a name="lookintransformed"></a> LookInTransformed evaluation mode example
+
+Example on how to use `LookInTransformed` evaluation mode:
+
+Code:
+```C#
+...
+string transformedString = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.LookInTransformed }).Transform(transformer, input);
+...
+```
+
+Input:
+
+```JSON
+{
+  "number": 123,
+  "boolean": true
+}
+```
+
+Transformer:
+
+```JSON
+{
+  "first": "#valueof($.number)",
+  "second": "#valueof($.first)",
+  "third": "#add(2,#valueof($.second))",
+  "fourth": "#valueof($.boolean)",
+  "fifth": "#valueof($.fourth)",
+  "sixth": "#ifcondition(#valueof($.fifth),true,value is true,value is false)"
+}
+```
+
+Output:
+```JSON
+{
+  "first": 123,
+  "second": 123,
+  "third": 125,
+  "fourth": true,
+  "fifth": true,
+  "sixth": "value is true"
+}
+```
+
+## <a name="transform"></a> Multiple transformations
+
+The #applyover function is handy to make a simple transformation, but when extra transformation is complex, it can became cumbersome, because one has to escape all special characters.
+To avoid this, there's a function called #transform. It takes a path as parameter, and like bulk functions, is composed by an array. Each element of the array is a transformation,
+that will be applied over the generated result of the previous item of the array. The first item/transformation will be applied over the given input, or current element if one is on an array loop.
+Note that for the second element/transformation and beyond, the input is the previous generated output of the previous transformation, so it's like a new transformation.
+
+Consider the following input:
+
+```JSON
+{
+  "spell": ["one", "two", "three"],
+  "letters": ["z", "c", "n"],
+  "nested": {
+    "spell": ["one", "two", "three"],
+    "letters": ["z", "c", "n"]
+  },
+  "array": [{
+      "spell": ["one", "two", "three"],
+      "letters": ["z", "c", "n"]
+    }, {
+      "spell": ["four", "five", "six"],
+      "letters": ["z", "c", "n"]
+    }
+  ]
+}
+```
+
+
+Transformer:
+
+```JSON
+{
+  "scalar": {
+    "#transform($)": [
+      { "condition": { "#loop($.letters)": { "test": "#ifcondition(#stringcontains(#valueof($.spell[0]),#currentvalue()),True,yes,no)" } } },
+      "#exists($.condition[?(@.test=='yes')])"
+	]
+  },
+  "object": {
+    "#transform($)": [
+      { "condition": { "#loop($.letters)": { "test": "#ifcondition(#stringcontains(#valueof($.spell[0]),#currentvalue()),True,yes,no)" } } },
+      { "intermediate_transform": "#valueof($.condition)" },
+      { "result": "#exists($.intermediate_transform[?(@.test=='yes')])" }
+    ]
+  },
+  "select_token": {
+    "#transform($.nested)": [
+      { "condition": { "#loop($.letters)": { "test": "#ifcondition(#stringcontains(#valueof($.spell[0]),#currentvalue()),True,yes,no)" } } },
+      { "intermediate_transform": "#valueof($.condition)" },
+      { "result": "#exists($.intermediate_transform[?(@.test=='yes')])" }
+    ]
+  },
+  "loop": {
+    "#loop($.array,selectLoop)": {
+      "#transform($)": [
+        { "condition": { "#loop($.letters)": { "test": "#ifcondition(#stringcontains(#currentvalueatpath($.spell[0],selectLoop),#currentvalue()),True,yes,no)" } } },
+        { "intermediate_transform": "#valueof($.condition)" },
+        { "result": "#exists($.intermediate_transform[?(@.test=='yes')])" }
+      ]
+    }
+  }
+}
+```
+
+Output:
+
+```JSON
+{
+  "scalar": true,
+  "object": {
+    "result": true
+  }
+  "select_token": {
+    "result": true
+  },
+  "loop": [
+    { "result": true },
+	{ "result": false }
+  ]
 }
 ```
 
@@ -1760,9 +1938,9 @@ The output will contain 4 JSON files:
 ## <a name="otherformats"></a> Transforming JSON to other data formats
 
 JUST.NET can now transform JSON data into other generic formats too. All functions except the BULK FUNCTIONS are supported in this feature.
-The #loop functions excepts an extra argument which defines the seperator between the individual records.
+The #loop functions accepts an extra argument which defines the seperator between the individual records.
 
-```JSON
+```
 #loop(path,seaperator)
 ```
 
@@ -1776,7 +1954,7 @@ Sample code to transform from JSON to XML:
 ```C#
 string input = File.ReadAllText("Input.json");``
 string transformer = File.ReadAllText("DataTransformer.xml");
-string transformedString = DataTransformer.Transform(transformer, input);
+string transformedString = new DataTransformer().Transform(transformer, input);
 ```
 
 Input.json:
@@ -1859,7 +2037,7 @@ DataTransformer.xml:
     <stringresult>
       <lastindexofand>#lastindexof(#valueof($.stringref),and)</lastindexofand>
       <firstindexofand>#firstindexof(#valueof($.stringref),and)</firstindexofand>
-      <subsrting>#substring(#valueof($.stringref),8,10)</subsrting>
+      <substring>#substring(#valueof($.stringref),8,10)</substring>
       <concat>#concat(#valueof($.menu.id.file),#valueof($.menu.value.Window))</concat>
     </stringresult>
     <mathresult>
@@ -1882,12 +2060,12 @@ DataTransformer.xml:
   <FullName>#concat(#concat(#concat(#valueof($.Name), ),#concat(#valueof($.MiddleName), )),#valueof($.Surname))</FullName>
   <Contact_Information>
     <City>#substring(#valueof($.ContactInformation),#add(#firstindexof(#valueof($.ContactInformation),:),1),#subtract(#subtract(#lastindexof(#valueof($.ContactInformation),:),#firstindexof(#valueof($.ContactInformation),:)),1))</City>
-    <PhoneNumber>#substring(#valueof($.ContactInformation),#add(#lastindexof(#valueof($.ContactInformation),:),1),#subtract(#lastindexof(#valueof($.ContactInformation),),#lastindexof(#valueof($.ContactInformation),:)))</PhoneNumber>
+    <PhoneNumber>#substring(#valueof($.ContactInformation),#add(#lastindexof(#valueof($.ContactInformation),:),1),#subtract(#subtract(#length(#valueof($.ContactInformation)),1),#lastindexof(#valueof($.ContactInformation),:)))</PhoneNumber>
     <Street_Name>#substring(#valueof($.ContactInformation),0,#firstindexof(#valueof($.ContactInformation),:))</Street_Name>
   </Contact_Information>
   <Personal_Information>
     <Age>#substring(#valueof($.PersonalInformation),0,#firstindexof(#valueof($.PersonalInformation),:))</Age>
-    <Ethnicity>#substring(#valueof($.PersonalInformation),#add(#lastindexof(#valueof($.PersonalInformation),:),1),#subtract(#lastindexof(#valueof($.PersonalInformation),),#lastindexof(#valueof($.PersonalInformation),:)))</Ethnicity>
+    <Ethnicity>#substring(#valueof($.PersonalInformation),#add(#lastindexof(#valueof($.PersonalInformation),:),1),#subtract(#subtract(#length(#valueof($.PersonalInformation)),1),#lastindexof(#valueof($.PersonalInformation),:)))</Ethnicity>
     <LogId>#valueof($.LogId)</LogId>
     <Civil_Status>#substring(#valueof($.PersonalInformation),#add(#firstindexof(#valueof($.PersonalInformation),:),1),#subtract(#subtract(#lastindexof(#valueof($.PersonalInformation),:),#firstindexof(#valueof($.PersonalInformation),:)),1))</Civil_Status>
   </Personal_Information>
@@ -1915,7 +2093,7 @@ Output:
     <stringresult>
       <lastindexofand>21</lastindexofand>
       <firstindexofand>6</firstindexofand>
-      <subsrting>dveryunuas</subsrting>
+      <substring>dveryunuas</substring>
       <concat>csvpopup</concat>
     </stringresult>
     <mathresult>

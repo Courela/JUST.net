@@ -1,4 +1,5 @@
 ﻿using JUST.net.Selectables;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
@@ -15,6 +16,12 @@ namespace JUST
         public Transformer(JUSTContext context)
         {
             Context = context ?? new JUSTContext();
+            Context.JsonSettings = JsonConvert.DefaultSettings != null ?
+                JsonConvert.DefaultSettings() :
+                new JsonSerializerSettings
+                {
+                    DateParseHandling = DateParseHandling.None
+                };
         }
 
         protected static object TypedNumber(decimal number)
@@ -567,13 +574,13 @@ namespace JUST
             JArray result;
             var selector = context.Resolve<T>(context.Input);
             JArray arr = (JArray)selector.Select(path);
-            if (!groupingElement.Contains(":"))
+            if (!groupingElement.Contains(context.SplitGroupChar))
             {
                 result = Utilities.GroupArray<T>(arr, groupingElement, groupedElement, context);
             }
             else
             {
-                string[] groupingElements = groupingElement.Split(':');
+                string[] groupingElements = groupingElement.Split(context.SplitGroupChar);
                 result = Utilities.GroupArrayMultipleProperties<T>(arr, groupingElements, groupedElement, context);
             }
             return result;
@@ -756,6 +763,7 @@ namespace JUST
             }
             return result;
         }
+
         public static bool isnumber(object val, JUSTContext context)
         {
             try
@@ -792,6 +800,11 @@ namespace JUST
         public static string stringempty()
         {
             return string.Empty;
+        }
+
+        public static object arrayempty(JUSTContext context)
+        {
+            return new object[0];
         }
     }
 }

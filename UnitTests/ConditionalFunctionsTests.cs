@@ -234,5 +234,38 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"Result\":{},\"Other\":\"property\"}", result);
         }
+
+        [Test, Category("IfCondition")]
+        public void ConstantEmptyArray()
+        {
+            const string input = "{ \"val\": \"test\" }";
+            const string transformer = "{ \"result\": \"#ifcondition(something_else,#valueof($.val),truevalue,#arrayempty())\" }";
+
+            var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("{\"result\":[]}", result);
+        }
+
+        [Test, Category("IfGroup")]
+        public void ConditionalGroupDoNotEvaluateIfFalse()
+        {
+            const string input = "{ \"Order\": { \"OrderID\": \"1001\", \"OrderApprover\": \"John\" }}";
+            const string transformer = "{ \"#ifgroup(#exists($.Order.OrderID))\": { \"OrderID\": \"#valueof($.Order.OrderID)\", \"Approver\": \"#valueof($.Order.OrderApprover)\" }, \"#ifgroup(#exists($.Order[0].OrderID))\": { \"orders\": { \"#loop($.Order)\" : {  \"OrderID\": \"#currentvalueatpath($.OrderID)\",  \"Approver\": \"#currentvalueatpath($.OrderApprover)\" } } }}";
+
+            var result = new JsonTransformer().Transform(transformer, input);
+
+            Assert.AreEqual("{\"OrderID\":\"1001\",\"Approver\":\"John\"}", result);
+        }
+
+        [Test]
+        public void ConditionalGroupOnArrayItemWithLoopInside()
+        {
+            const string input = "{ \"additional_content\": [{ \"Cards_feed\": { \"cards_feed\": [ \"2\"] } }] }";
+            const string transformer = "{ \"content\": [ { \"aaa\": \"bbb\" }, { \"#ifgroup(#exists($.additional_content[*].Cards_feed))\": { \"#loop($.additional_content[*].Cards_feed.cards_feed)\": { \"xxx\": \"yyy\" } } } ] }";
+
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{\"content\":[{\"aaa\":\"bbb\"},[{\"xxx\":\"yyy\"}]]}", result);
+        }
     }
 }
