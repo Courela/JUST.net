@@ -165,15 +165,15 @@ namespace JUST
 
             if (selectedTokens != null)
             {
-                CopyPostOperationBuildUp(parentToken, selectedTokens, this.Context);
+                CopyPostOperationBuildUp(parentToken, selectedTokens);
             }
             if (tokensToReplace != null)
             {
-                ReplacePostOperationBuildUp(parentToken, tokensToReplace, this.Context);
+                ReplacePostOperationBuildUp(parentToken, tokensToReplace);
             }
             if (tokensToDelete != null)
             {
-                DeletePostOperationBuildUp(parentToken, tokensToDelete, this.Context);
+                DeletePostOperationBuildUp(parentToken, tokensToDelete);
             }
             if (tokensToAdd != null)
             {
@@ -254,7 +254,63 @@ namespace JUST
                 case "eval":
                     EvalOperation(property, arguments, parentArray, currentArrayToken, ref loopProperties, ref tokensToAdd);
                     break;
+                case "transform":
+                    TranformOperation(property, arguments, parentArray, currentArrayToken);
+                    break;
             }
+        }
+
+        private void TranformOperation(JProperty property, string arguments, IDictionary<string, JArray> parentArray, IDictionary<string, JToken> currentArrayToken)
+        {
+            string[] argumentArr = ExpressionHelper.SplitArguments(arguments, Context.EscapeChar);
+
+            object functionResult = ParseArgument(null, parentArray, currentArrayToken, argumentArr[0]);
+            if (!(functionResult is string jsonPath))
+            {
+                throw new ArgumentException($"Invalid path for #transform: '{argumentArr[0]}' resolved to null!");
+            }
+
+            JToken selectedToken = null;
+            string alias = null;
+            if (argumentArr.Length > 1)
+            {
+                alias = ParseArgument(null, parentArray, currentArrayToken, argumentArr[1]) as string;
+                if (!(currentArrayToken?.ContainsKey(alias) ?? false))
+                {
+                    throw new ArgumentException($"Unknown loop alias: '{argumentArr[1]}'");
+                }
+                JToken input = alias != null ? currentArrayToken?[alias] : currentArrayToken?.Last().Value ?? Context.Input;
+                var selectable = GetSelectableToken(currentArrayToken[alias], Context);
+                selectedToken = selectable.Select(argumentArr[0]);
+            }
+            else
+            {
+                var selectable = GetSelectableToken(currentArrayToken?.Last().Value ?? Context.Input, Context);
+                selectedToken = selectable.Select(argumentArr[0]);
+            }
+            
+            if (property.Value.Type == JTokenType.Array)
+            {
+                JToken originalInput = Context.Input;
+                Context.Input = selectedToken;
+                for (int i = 0; i < property.Value.Count(); i++)
+                {
+                    JToken token = property.Value[i];
+                    if (token.Type == JTokenType.String)
+                    {
+                        var obj = ParseFunction(token.Value<string>(), null, parentArray, currentArrayToken);
+                        token.Replace(GetToken(obj));
+                    }
+                    else
+                    {
+                        RecursiveEvaluate(ref token, i == 0 ? parentArray : null, i == 0 ? currentArrayToken : null);
+                    }
+                    Context.Input = token;
+                }
+                
+                Context.Input = originalInput;
+            }
+            property.Parent.Replace(property.Value[property.Value.Count() - 1]);
         }
 
         private void PostOperationsBuildUp(ref JToken parentToken, List<JToken> tokenToForm)
@@ -303,7 +359,7 @@ namespace JUST
             }
         }
 
-        private static void CopyPostOperationBuildUp(JToken parentToken, List<JToken> selectedTokens, JUSTContext context)
+        private void CopyPostOperationBuildUp(JToken parentToken, List<JToken> selectedTokens)
         {
             foreach (JToken selectedToken in selectedTokens)
             {
@@ -311,7 +367,7 @@ namespace JUST
                 {
                     JObject parent = parentToken as JObject;
                     JEnumerable<JToken> copyChildren = selectedToken.Children();
-                    if (context.IsAddOrReplacePropertiesMode())
+                    if (Context.IsAddOrReplacePropertiesMode())
                     {
                         CopyDescendants(parent, copyChildren);
                     }
@@ -373,12 +429,12 @@ namespace JUST
             }
         }
 
-        private static void DeletePostOperationBuildUp(JToken parentToken, List<JToken> tokensToDelete, JUSTContext context)
+        private void DeletePostOperationBuildUp(JToken parentToken, List<JToken> tokensToDelete)
         {
 
             foreach (string selectedToken in tokensToDelete)
             {
-                JToken tokenToRemove = GetSelectableToken(parentToken, context).Select(selectedToken);
+                JToken tokenToRemove = GetSelectableToken(parentToken, Context).Select(selectedToken);
 
                 if (tokenToRemove != null)
                     tokenToRemove.Ancestors().First().Remove();
@@ -386,13 +442,12 @@ namespace JUST
 
         }
 
-        private static void ReplacePostOperationBuildUp(JToken parentToken, Dictionary<string, JToken> tokensToReplace, JUSTContext context)
+        private static void ReplacePostOperationBuildUp(JToken parentToken, Dictionary<string, JToken> tokensToReplace)
         {
 
             foreach (KeyValuePair<string, JToken> tokenToReplace in tokensToReplace)
             {
-                JsonPathSelectable selectable = JsonTransformer.GetSelectableToken(parentToken, context);
-                JToken selectedToken = selectable.Select(tokenToReplace.Key);
+                JToken selectedToken = (parentToken as JObject).SelectToken(tokenToReplace.Key);
                 selectedToken.Replace(tokenToReplace.Value);
             }
 
