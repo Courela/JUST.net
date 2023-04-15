@@ -167,6 +167,10 @@ namespace JUST
                 {
                     return str1.Length > 0 ? str1 + obj2?.ToString() : string.Empty + obj2.ToString();
                 }
+                if (obj1 is JValue jValue)
+                {
+                    return jValue.ToString() + obj2.ToString();
+                }
                 return ConcatArray(obj1, obj2);
             }
             else if (obj2 != null)
@@ -174,6 +178,10 @@ namespace JUST
                 if (obj2 is string str2)
                 {
                     return str2.Length > 0 ? obj1?.ToString() + str2 : obj1.ToString() + string.Empty;
+                }
+                if (obj2 is JValue jValue)
+                {
+                    return jValue.ToString() + obj1.ToString();
                 }
                 return ConcatArray(obj2, obj1);
             }

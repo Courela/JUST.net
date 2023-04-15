@@ -11,7 +11,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"firstindexofand\": \"#firstindexof(#valueof($.stringref),and)\" }}";
 
-            var result = new JsonTransformer().Transform(transformer, ExampleInputs.StringRef);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.StringRef);
 
             Assert.AreEqual("{\"stringresult\":{\"firstindexofand\":6}}", result);
         }
@@ -21,7 +21,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"lastindexofand\": \"#lastindexof(#valueof($.stringref),and)\" }}";
 
-            var result = new JsonTransformer().Transform(transformer, ExampleInputs.StringRef);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.StringRef);
 
             Assert.AreEqual("{\"stringresult\":{\"lastindexofand\":21}}", result);
         }
@@ -31,7 +31,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"substring\": \"#substring(#valueof($.stringref),8,10)\" }}";
 
-            var result = new JsonTransformer().Transform(transformer, ExampleInputs.StringRef);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.StringRef);
 
             Assert.AreEqual("{\"stringresult\":{\"substring\":\"dveryunuas\"}}", result);
         }
@@ -41,7 +41,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"substring\": \"#substring(#valueof($.stringref),100,100)\" }}";
 
-            var result = new JsonTransformer().Transform(transformer, ExampleInputs.StringRef);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.StringRef);
 
             Assert.AreEqual("{\"stringresult\":{\"substring\":null}}", result);
         }
@@ -59,7 +59,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"concat\": \"#concat(#valueof($.menu.id.file),#valueof($.menu.value.Window))\" }}";
 
-            var result = new JsonTransformer().Transform(transformer, ExampleInputs.Menu);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.Menu);
 
             Assert.AreEqual("{\"stringresult\":{\"concat\":\"csvpopup\"}}", result);
         }
@@ -69,7 +69,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"stringequals\": \"#stringequals(#valueof($.d[0]),one)\" }}";
 
-            var result = new JsonTransformer().Transform(transformer, ExampleInputs.StringsArray);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.StringsArray);
 
             Assert.AreEqual("{\"stringresult\":{\"stringequals\":true}}", result);
         }
@@ -79,8 +79,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"stringequals\": \"#stringequals(#valueof($.d[0]),oNe)\" }}";
 
-            var context = new JUSTContext() { EvaluationMode = EvaluationMode.Strict };
-            var result = new JsonTransformer(context).Transform(transformer, ExampleInputs.StringsArray);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.StringsArray);
 
             Assert.AreEqual("{\"stringresult\":{\"stringequals\":false}}", result);
         }
@@ -90,7 +89,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"stringequals\": \"#stringequals(#valueof($.not_there),one)\" }}";
 
-            var result = new JsonTransformer().Transform(transformer, ExampleInputs.StringsArray);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.StringsArray);
 
             Assert.AreEqual("{\"stringresult\":{\"stringequals\":false}}", result);
         }
@@ -100,7 +99,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"stringcontains\": \"#stringcontains(#valueof($.d[0]),n)\" }}";
 
-            var result = new JsonTransformer().Transform(transformer, ExampleInputs.StringsArray);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.StringsArray);
 
             Assert.AreEqual("{\"stringresult\":{\"stringcontains\":true}}", result);
         }
@@ -110,8 +109,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"stringcontains\": \"#stringcontains(#valueof($.d[0]),N)\" }}";
 
-            var context = new JUSTContext() { EvaluationMode = EvaluationMode.Strict };
-            var result = new JsonTransformer(context).Transform(transformer, ExampleInputs.StringsArray);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.StringsArray);
 
             Assert.AreEqual("{\"stringresult\":{\"stringcontains\":false}}", result);
         }
@@ -121,7 +119,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"stringcontains\": \"#stringcontains(#valueof($.not_there),n)\" }}";
 
-            var result = new JsonTransformer().Transform(transformer, ExampleInputs.StringsArray);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.StringsArray);
 
             Assert.AreEqual("{\"stringresult\":{\"stringcontains\":false}}", result);
         }
@@ -131,11 +129,8 @@ namespace JUST.UnitTests
         {
             var input = "{ \"empty\": \"\", \"not_empty\": \"not empty\" }";
             var transformer = "{ \"test_empty\": \"#ifcondition(#valueof($.empty),#stringempty(),is empty,not empty)\", \"test_not_empty\": \"#ifcondition(#valueof($.not_empty),#stringempty(),empty,is not empty)\" }";
-            var context = new JUSTContext
-            {
-                EvaluationMode = EvaluationMode.Strict
-            };
-            var result = new JsonTransformer(context).Transform(transformer, input);
+            
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"test_empty\":\"is empty\",\"test_not_empty\":\"is not empty\"}", result);
         }

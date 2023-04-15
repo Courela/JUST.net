@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JUST.net.UnitTests", "UnitT
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTestForExternalAssemblyBug", "UnitTestForExternalAssemblyBug\UnitTestForExternalAssemblyBug.csproj", "{ACF43DDB-7C3C-43D8-98D7-944147D61AB3}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharpParserGenerator", "CSharpParserGenerator\CSharpParserGenerator.csproj", "{1993F092-8297-46FB-B600-637C1E011B56}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{ACF43DDB-7C3C-43D8-98D7-944147D61AB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ACF43DDB-7C3C-43D8-98D7-944147D61AB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ACF43DDB-7C3C-43D8-98D7-944147D61AB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1993F092-8297-46FB-B600-637C1E011B56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1993F092-8297-46FB-B600-637C1E011B56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1993F092-8297-46FB-B600-637C1E011B56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1993F092-8297-46FB-B600-637C1E011B56}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

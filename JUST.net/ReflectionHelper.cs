@@ -42,20 +42,13 @@ namespace JUST
         {
             var instance = !methodInfo.IsStatic ? Activator.CreateInstance(methodInfo.DeclaringType) : null;
 
-            var typedParameters = new List<object>();
-            if (convertParameters)
-            {
-                var parameterInfos = methodInfo.GetParameters();
-                for (int i = 0; i < parameterInfos.Length; i++)
-                {
-                    var pType = parameterInfos[i].ParameterType;
-                    typedParameters.Add(GetTypedValue(pType, parameters[i], context.EvaluationMode));
-                }
-            }
+            object[] typedParameters = convertParameters ? 
+                ConvertParameters(methodInfo.GetParameters(), parameters, context) :
+                parameters;
             try
             {
                 return (methodInfo.IsGenericMethodDefinition ? methodInfo.MakeGenericMethod(typeof(T)) : methodInfo)
-                    .Invoke(instance, convertParameters ? typedParameters.ToArray() : parameters);
+                    .Invoke(instance, typedParameters);
             }
             catch(Exception ex)
             {
@@ -65,6 +58,17 @@ namespace JUST
                 }
                 throw;
             }
+        }
+
+        internal static object[] ConvertParameters(ParameterInfo[] parameterInfos, object[] parameters, JUSTContext context)
+        {
+            var typedParameters = new List<object>();
+            for (int i = 0; i < parameterInfos.Length; i++)
+            {
+                var pType = parameterInfos[i].ParameterType;
+                typedParameters.Add(GetTypedValue(pType, parameters[i], context.EvaluationMode));
+            }
+            return typedParameters.ToArray();
         }
 
         internal static object CallExternalAssembly<T>(string functionName, object[] parameters, JUSTContext context) where T : ISelectableToken

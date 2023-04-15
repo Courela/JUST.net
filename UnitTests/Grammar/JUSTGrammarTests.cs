@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using CSharpParserGenerator;
+using JUST.net.Selectables;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
@@ -13,7 +14,7 @@ namespace JUST.UnitTests.Gramar
     {
         private JToken _input;
 
-        [OneTimeSetUp]
+        [SetUp]
         public void Setup()
         {
             string jsonContent = File.ReadAllText("Inputs/grammar_input.json");
@@ -108,9 +109,7 @@ namespace JUST.UnitTests.Gramar
         [TestCase("#ifgroup(#exists($.bulk.tree.branch))", true)]
         [TestCase("#ifgroup(#exists($.dummy.not.exists))", false)]
         [TestCase("#eval(prop)", "prop")]
-          //[TestCase("#grouparrayby($.Forest,type,all)")]
-        // [TestCase("#customfunction(JUST.NET.Test,JUST.NET.Test.Season.findseason,#valueof($.tree.branch.leaf),#valueof($.tree.branch.flower))")]
-        // [TestCase("#declared_function(dummy_arg)")]
+        [TestCase("#eval(#valueof($.string_one))", "one")]
         public void ValidateGrammar(string expression, object result)
         {
             JUSTContext context = new JUSTContext(true)
@@ -118,7 +117,7 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input,
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<object> parseResult = JUST.Gramar.Grammar<object>.Instance.Parse(expression, null, null, null, context);
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(expression, null, null, context);
             
             PrintResults(parseResult);
 
@@ -138,9 +137,8 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input,
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<object[]> parseResult = JUST.Gramar.Grammar<object[]>.Instance.Parse(
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null,
                 null,
                 null,
                 context);
@@ -166,9 +164,8 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input.SelectToken("$.bulk"),
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<JObject> parseResult = JUST.Gramar.Grammar<JObject>.Instance.Parse(
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null,
                 null,
                 null,
                 context);
@@ -200,9 +197,8 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input.SelectToken("$.bulk"),
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<JObject> parseResult = JUST.Gramar.Grammar<JObject>.Instance.Parse(
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null,
                 null,
                 null,
                 context);
@@ -234,9 +230,8 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input,
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<object[]> parseResult = JUST.Gramar.Grammar<object[]>.Instance.Parse(
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null,
                 null,
                 null,
                 context);
@@ -256,7 +251,7 @@ namespace JUST.UnitTests.Gramar
         public void ValidateGrammarLoopJsonValues(string expression, string result)
         {
             const string arrayAlias = "loop1";
-            JToken parentArray = this._input.SelectToken("$.arrayobjects");
+            JArray parentArray = this._input.SelectToken("$.arrayobjects") as JArray;
             JToken loopElement = this._input.SelectToken("$.arrayobjects[1]");
 
             JUSTContext context = new JUSTContext(true)
@@ -264,11 +259,10 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input.SelectToken("$.arrayobjects"),
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<JObject> parseResult = JUST.Gramar.Grammar<JObject>.Instance.Parse(
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                new Dictionary<string, JToken>{ { arrayAlias,  parentArray }},
+                new Dictionary<string, JArray>{ { arrayAlias,  parentArray }},
                 new Dictionary<string, JToken>{ { arrayAlias,  loopElement }},
-                arrayAlias,
                 context);
             
             PrintResults(parseResult);
@@ -285,7 +279,7 @@ namespace JUST.UnitTests.Gramar
         public void ValidateGrammarLoopIndexes(string expression, int result)
         {
             const string arrayAlias = "loop1";
-            JToken parentArray = this._input.SelectToken("$.arrayobjects");
+            JArray parentArray = this._input.SelectToken("$.arrayobjects") as JArray;
             JToken loopElement = this._input.SelectToken("$.arrayobjects[1]");
 
             JUSTContext context = new JUSTContext(true)
@@ -293,11 +287,10 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input.SelectToken("$.arrayobjects"),
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<object> parseResult = JUST.Gramar.Grammar<object>.Instance.Parse(
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                new Dictionary<string, JToken>{ { arrayAlias,  parentArray }},
+                new Dictionary<string, JArray>{ { arrayAlias,  parentArray }},
                 new Dictionary<string, JToken>{ { arrayAlias,  loopElement }},
-                arrayAlias,
                 context);
             
             PrintResults(parseResult);
@@ -314,7 +307,7 @@ namespace JUST.UnitTests.Gramar
         public void ValidateGrammarLoopPrimiteValues(string expression, string result)
         {
             const string arrayAlias = "loop1";
-            JToken parentArray = this._input.SelectToken("$.arrayobjects");
+            JArray parentArray = this._input.SelectToken("$.arrayobjects") as JArray;
             JToken loopElement = this._input.SelectToken("$.arrayobjects[1]");
 
             JUSTContext context = new JUSTContext(true)
@@ -322,11 +315,10 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input.SelectToken("$.arrayobjects"),
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<object> parseResult = JUST.Gramar.Grammar<object>.Instance.Parse(
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                new Dictionary<string, JToken>{ { arrayAlias,  parentArray }},
+                new Dictionary<string, JArray>{ { arrayAlias,  parentArray }},
                 new Dictionary<string, JToken>{ { arrayAlias,  loopElement }},
-                arrayAlias,
                 context);
             
             PrintResults(parseResult);
@@ -342,7 +334,7 @@ namespace JUST.UnitTests.Gramar
         public void ValidateGrammarLoopObject(string expression, string result)
         {
             const string arrayAlias = "dog";
-            JToken parentArray = this._input.SelectToken("$.animals");
+            JArray parentArray = this._input.SelectToken("$.animals") as JArray;
             JToken loopElement = this._input.SelectToken("$.animals");
 
             JUSTContext context = new JUSTContext(true)
@@ -350,11 +342,10 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input.SelectToken("$.animals"),
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<object> parseResult = JUST.Gramar.Grammar<object>.Instance.Parse(
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                new Dictionary<string, JToken>{ { arrayAlias,  parentArray }},
+                new Dictionary<string, JArray>{ { arrayAlias,  parentArray }},
                 new Dictionary<string, JToken>{ { arrayAlias,  loopElement }},
-                arrayAlias,
                 context);
             
             PrintResults(parseResult);
@@ -375,9 +366,9 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input,
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<string> parseResult = JUST.Gramar.Grammar<string>.Instance.Parse(
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null, null, null,
+                null, null,
                 context);
             
             PrintResults(parseResult);
@@ -398,9 +389,9 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input,
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult<object[]> parseResult = JUST.Gramar.Grammar<object[]>.Instance.Parse(
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null, null, null,
+                null, null,
                 context);
             
             PrintResults(parseResult);
@@ -419,7 +410,142 @@ namespace JUST.UnitTests.Gramar
             });
         }
 
-        private static void PrintResults<T>(ParseResult<T> result)
+        [Test]
+        public void ValidateGrammarGroupArrayBy()
+        {
+            const string expression = "#grouparrayby($.Forest,type,all)";
+            JUSTContext context = new JUSTContext(true)
+            {
+                Input = this._input,
+                EvaluationMode = EvaluationMode.Strict,
+            };
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
+                expression,
+                null,
+                null,
+                context);
+            
+            PrintResults(parseResult);
+
+            JToken result = JToken.Parse(
+                "[{" +
+                    "\"type\": \"Mammal\", " +
+                    "\"all\": [{" +
+                        "\"qty\": 1," +
+                        "\"name\": \"Hippo\"" +
+                    "}, {" +
+                        "\"qty\": 1,"+
+                        "\"name\": \"Elephant\""+
+                    "}, {" +
+                        "\"qty\": 10," +
+                        "\"name\": \"Dog\""+
+                    "}]"+
+                "}, {" +
+                    "\"type\": \"Bird\","+
+                    "\"all\": [{" +
+                        "\"qty\": 2," +
+                        "\"name\": \"Sparrow\""+
+                    "}, {" +
+                        "\"qty\": 3," +
+                        "\"name\": \"Parrot\"" +
+                    "}]" +
+                "}, {" +
+                    "\"type\": \"Amphibian\"," +
+                    "\"all\": [{" +
+                        "\"qty\": 300," +
+                        "\"name\": \"Lizard\"" +
+                    "}]" +
+                "}]");
+            Assert.Multiple(() => {
+                Assert.AreEqual(0, parseResult.Errors.Count);
+                Assert.True(parseResult.Success);
+                Assert.AreEqual(result, parseResult.Value);
+            });
+        }
+
+        [TestCase("#declared_function(string_arg)", "StringMethod", "success string_arg")]
+        [TestCase("#declared_function(#valueof($.menu))", "JTokenMethod", "success JUST")]
+        [TestCase("#declared_function(#valueof($.menu), #valueof($.string))", "MixMethod", "success JUST abc")]
+        public void ValidateGrammarRegisteredFunction(string expression, string method, string result)
+        {
+            const string func = "declared_function";
+            JUSTContext context = new JUSTContext(true)
+            {
+                Input = this._input,
+                EvaluationMode = EvaluationMode.Strict,
+            };
+            context.RegisterCustomFunction(null, "JUST.UnitTests.Gramar.JUSTGrammarTests", method, func);
+
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(expression, null, null, context);
+            
+            PrintResults(parseResult);
+
+            Assert.Multiple(() => {
+                Assert.AreEqual(0, parseResult.Errors.Count);
+                Assert.True(parseResult.Success);
+                Assert.AreEqual(result, parseResult.Value);
+            });
+        }
+
+        [Test]
+        public void ValidateGrammarCustomFunction()
+        {
+            const string expression = "#customfunction(ExternalMethods,SeasonsHelper.Season.findseasontemperaturetable,#valueof($.data))";
+            JUSTContext context = new JUSTContext(true)
+            {
+                Input = this._input,
+                EvaluationMode = EvaluationMode.Strict,
+            };
+            
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(expression, null, null, context);
+            
+            PrintResults(parseResult);
+
+            Assert.Multiple(() => {
+                Assert.AreEqual(0, parseResult.Errors.Count);
+                Assert.True(parseResult.Success);
+                Assert.AreEqual(true, parseResult.Value);
+            });
+        }
+
+        [Test]
+        public void ValidateGrammarNotRegisteredFunctionStrict()
+        {
+            const string func = "declared_function";
+            const string expression = $"#{func}(dummy_arg)";
+            JUSTContext context = new JUSTContext(true)
+            {
+                Input = this._input,
+                EvaluationMode = EvaluationMode.Strict,
+            };
+
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(expression, null, null, context);
+            
+            PrintResults(parseResult);
+
+            Assert.Multiple(() => {
+                Assert.AreEqual(1, parseResult.Errors.Count);
+                Assert.AreEqual("Function not registered: declared_function", parseResult.Errors[0].Description);
+                Assert.False(parseResult.Success);
+            });
+        }
+
+        public string StringMethod(string arg1)
+        {
+            return $"success {arg1}";
+        }
+
+        public string JTokenMethod(JToken arg1)
+        {
+            return $"success {arg1.SelectToken("$.repository")}";
+        }
+
+        public string MixMethod(JToken arg1, string arg2)
+        {
+            return $"success {arg1.SelectToken("$.repository")} {arg2}";
+        }
+
+        private static void PrintResults(ParseResult result)
         {
             if (!result.Success)
             {

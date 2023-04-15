@@ -38,11 +38,7 @@ namespace JUST.UnitTests
         {
             var input = "{\"Food\": {\"Desserts\": {\"item\": [{\"name\": \"carrot cake\",\"price\": 5},{\"name\": \"ice cream\",\"price\": 10}]}}}";
             var transformer = "\"#valueof($)\"";
-            var context = new JUSTContext
-            {
-                EvaluationMode = EvaluationMode.Strict
-            };
-            var result = new JsonTransformer(context).Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"Food\":{\"Desserts\":{\"item\":[{\"name\":\"carrot cake\",\"price\":5},{\"name\":\"ice cream\",\"price\":10}]}}}", result);
         }

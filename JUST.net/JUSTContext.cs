@@ -7,36 +7,6 @@ using System.Reflection;
 
 namespace JUST
 {
-    public class CustomFunction
-    {
-        public string AssemblyName { get; set; }
-        public string Namespace { get; set; }
-        public string MethodName { get; set; }
-        public string MethodAlias { get; set; }
-
-        public CustomFunction()
-        {
-        }
-
-        public CustomFunction(string assemblyName, string namespc, string methodName, string methodAlias = null)
-        {
-            AssemblyName = assemblyName;
-            Namespace = namespc;
-            MethodName = methodName;
-            MethodAlias = methodAlias;
-        }
-    }
-
-    [Flags]
-    public enum EvaluationMode : short
-    {
-        FallbackToDefault = 1,
-        AddOrReplaceProperties = 2,
-        Strict = 4,
-        JoinArrays = 8,
-        LookInTransformed = 16
-    }
-
     public class JUSTContext
     {
         private Dictionary<string, MethodInfo> _customFunctions = new Dictionary<string, MethodInfo>();
@@ -187,5 +157,9 @@ namespace JUST
             instance.Token = token;
             return instance;
         }
+
+        internal IDictionary<string, JArray> ParentArray;
+        internal IDictionary<string, JToken> CurrentArrayToken;
+        internal int LoopCounter;
     }
 }

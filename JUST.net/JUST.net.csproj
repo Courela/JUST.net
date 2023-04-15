@@ -30,7 +30,7 @@ This will repace the JUST and JUST.NETCore packages.</Description>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\CSharpParserGenerator-1.1.2\CSharpParserGenerator\CSharpParserGenerator.csproj" />
+    <ProjectReference Include="..\CSharpParserGenerator\CSharpParserGenerator.csproj" />
   </ItemGroup>
 
 </Project>
