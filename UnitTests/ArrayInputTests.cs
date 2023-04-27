@@ -9,7 +9,7 @@ namespace JUST.UnitTests
         public void SingleResult()
         {
             const string input = "[{ \"id\": 1, \"name\": \"Person 1\", \"gender\": \"M\" },{ \"id\": 2, \"name\": \"Person 2\", \"gender\": \"F\" },{ \"id\": 3, \"name\": \"Person 3\", \"gender\": \"M\" }]";
-            const string transformer = "{ \"result\": \"#valueof([?(@.gender=='F')].name)\" }";
+            const string transformer = "{ \"result\": \"#valueof($[?/(@.gender=='F'/)].name)\" }";
 
             var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict })
                 .Transform(transformer, input);
@@ -21,7 +21,7 @@ namespace JUST.UnitTests
         public void Iterate()
         {
             const string input = "[{ \"id\": 1, \"name\": \"Person 1\", \"gender\": \"M\" },{ \"id\": 2, \"name\": \"Person 2\", \"gender\": \"F\" },{ \"id\": 3, \"name\": \"Person 3\", \"gender\": \"M\" }]";
-            const string transformer = "{ \"result\": { \"#loop([?(@.gender=='M')])\": { \"name\": \"#currentvalueatpath($.name)\" } } }";
+            const string transformer = "{ \"result\": { \"#loop($[?/(@.gender=='M'/)])\": { \"name\": \"#currentvalueatpath($.name)\" } } }";
 
             var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict })
                 .Transform(transformer, input);

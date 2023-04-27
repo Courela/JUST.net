@@ -7,13 +7,11 @@ using System.Linq;
 
 namespace JUST.Gramar
 {
-    public class Grammar<TSelectable> where TSelectable : ISelectableToken
+    public class Grammar<TSelectable> : IDisposable where TSelectable : ISelectableToken
     {
         private Parser<ELang> _parser;
 
         private string _arrayAlias;
-        private IDictionary<string, JToken> _currentArrayToken;
-        private IDictionary<string, JArray> _parentArrayToken;
         private JUSTContext _context;
 
         private Grammar()
@@ -24,10 +22,8 @@ namespace JUST.Gramar
             }
         }
 
-        public ParseResult Parse(string expression, IDictionary<string, JArray> parentArrayToken, IDictionary<string, JToken> currentArrayToken, JUSTContext context)
+        public ParseResult Parse(string expression, JUSTContext context)
         {
-            this._parentArrayToken = parentArrayToken;
-            this._currentArrayToken = currentArrayToken;
             this._context = context;
             return this._parser.Parse(expression);
         }
@@ -40,12 +36,17 @@ namespace JUST.Gramar
             }
         }
 
-        private class Nested
+        private class Nested : IDisposable
         {
             static Nested()
             {
             }
-            internal static readonly Grammar<TSelectable> Instance = new Grammar<TSelectable>();
+            internal static Grammar<TSelectable> Instance = new Grammar<TSelectable>();
+
+            public void Dispose()
+            {
+                Instance = null;
+            }
         }
 
         protected enum ELang
@@ -75,17 +76,24 @@ namespace JUST.Gramar
 
             BulkFn,Copy,Replace,Delete,
 
-            LoopDeclare,ArrayLoop,Loop,Currentvalue,Currentindex,Currentproperty,Lastindex,Lastvalue,Currentvalueatpath,Lastvalueatpath,
+            LoopDeclare,ArrayLoop,Loop,
+            CurrentPropertyEval,Currentproperty,
+            CurrentIndexEval,Currentindex,
+            LastIndexEval,Lastindex,
+            CurrentValueEval,Currentvalue,
+            LastValueEval,Lastvalue,
+            CurrentValueAtPathEval,Currentvalueatpath,
+            LastValueAtPathEval,Lastvalueatpath,
             
             Exists,
             ExistsNotEmpty,
-            IfGroup,
+            IfGroupEval,IfGroup,
             Eval,
-            Xconcat,
+            Xconcat,Xadd,
             Grouparrayby,
             Customfunction,
 
-            ConstantSharp,ConstantComma,StringEmpty,
+            ConstantSharp,ConstantComma,StringEmpty,ArrayEmpty
         }
         
         private Parser<ELang> GetParser()
@@ -105,7 +113,6 @@ namespace JUST.Gramar
                 [ELang.Divide] = "divide",
                 [ELang.Round] = "round",
 
-                [ELang.StringEmpty] = "stringempty",
                 [ELang.StringEquals] = "stringequals",
                 [ELang.StringContains] = "stringcontains",
                 [ELang.MathEquals] = "mathequals",
@@ -131,17 +138,18 @@ namespace JUST.Gramar
                 [ELang.Replace] = "replace",
                 [ELang.Delete] = "delete",
                 [ELang.Loop] = "loop",
-                [ELang.Currentvalue] = "currentvalue",
                 [ELang.Currentindex] = "currentindex",
-                [ELang.Currentproperty] = "currentproperty",
                 [ELang.Lastindex] = "lastindex",
-                [ELang.Lastvalue] = "lastvalue",
+                [ELang.Currentproperty] = "currentproperty",
                 [ELang.Currentvalueatpath] = "currentvalueatpath",
+                [ELang.Currentvalue] = "currentvalue",
                 [ELang.Lastvalueatpath] = "lastvalueatpath",
-                [ELang.Exists] = "exists",
+                [ELang.Lastvalue] = "lastvalue",
                 [ELang.ExistsNotEmpty] = "existsandnotempty",
+                [ELang.Exists] = "exists",
                 [ELang.IfGroup] = "ifgroup",
                 [ELang.Eval] = "eval",
+                [ELang.Xadd] = "xadd",
                 [ELang.Xconcat] = "xconcat",
                 [ELang.Grouparrayby] = "grouparrayby",
                 [ELang.Customfunction] = "customfunction",
@@ -155,13 +163,15 @@ namespace JUST.Gramar
 
                 [ELang.ConstantSharp] = "constant_hash",
                 [ELang.ConstantComma] = "constant_comma",
+                [ELang.StringEmpty] = "stringempty",
+                [ELang.ArrayEmpty] = "arrayempty",
                 
                 [ELang.Ignore] = "[ \\n]+",
                 [ELang.LParenthesis] = "(?<!\\/)\\(",
                 [ELang.RParenthesis] = "(?<!\\/)\\)",
                 [ELang.Comma] = "(?<!\\/),",
                 [ELang.Sharp] = "(?<!\\/)#",
-                [ELang.JsonPathEx] = "(?i)\\$[\\.a-z\\[\\]0-9_\\-\\?&\\*\\s]*",
+                [ELang.JsonPathEx] = "(?i)\\$[\\.a-z\\[\\]0-9_\\-\\?&\\*\\s:]*",
                 [ELang.Number] = "\\d+\\.?\\d*",
                 [ELang.String] = "(?i)[a-z0-9_\\-\\.@='\\[\\]&\\s]+",
                 //[ELang.String] = "(?i)(?:[a-z0-9_\\-\\.]*(?:\\/\\(|\\/\\)|\\/,|\\/\\/)+?)|(?:(?:\\/\\(|\\/\\)|\\/,|\\/\\/)*?[a-z0-9_\\-\\.]+)",
@@ -188,14 +198,12 @@ namespace JUST.Gramar
             {
                 [ELang.EXPR] = new Token[][]
                 {
-                    new Token[] { ELang.Sharp, ELang.FUNC, new Op(o => {
-                        o[0] = o[1] != null ? JToken.FromObject(o[1]) as JToken : null;
-                    }) },
+                    new Token[] { ELang.Sharp, ELang.FUNC, new Op(o => o[0] = o[1] ) },
                 },
                 [ELang.FUNC] = new Token[][]
                 {
                     new Token[] { ELang.ValueOf, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
-                    new Token[] { ELang.IfCondition, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] == o[4] ? o[6] : o[8] )},
+                    new Token[] { ELang.IfCondition, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = AreEqual(o[2], o[4]) ? o[6] : o[8])},
                     new Token[] { ELang.StringAndMathFn },
                     new Token[] { ELang.Operators },
                     new Token[] { ELang.Aggregate },
@@ -205,12 +213,13 @@ namespace JUST.Gramar
                     new Token[] { ELang.BulkFn },
                     new Token[] { ELang.LoopDeclare },
                     new Token[] { ELang.ArrayLoop },
+                    new Token[] { ELang.IfGroupEval },
                     
                     new Token[] { ELang.Exists, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = (Invoke("valueof", true, new object[] { o[2], this._context }) != null) )},
                     new Token[] { ELang.ExistsNotEmpty, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
-                    new Token[] { ELang.IfGroup, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = o[2] )},
                     new Token[] { ELang.Eval, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = o[2] )},
                     new Token[] { ELang.Xconcat, ELang.LParenthesis, ELang.ARG, ELang.C_ARG, ELang.RParenthesis, new Op(o => o[0] = Xconcat(o[2], o[3])  )},
+                    new Token[] { ELang.Xadd, ELang.LParenthesis, ELang.ARG, ELang.C_ARG, ELang.RParenthesis, new Op(o => o[0] = o[2] + o[3] )},
                     new Token[] { ELang.Grouparrayby, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], o[4], o[6], this._context }) )},
                     new Token[] { ELang.Customfunction, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = InvokeCustomFunction(o[2], o[4], o[6], this._context)) },
                     new Token[] { ELang.String, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = InvokeRegisteredFunction(o[0], o[2], this._context)) },
@@ -218,6 +227,7 @@ namespace JUST.Gramar
                     new Token[] { ELang.ConstantSharp, ELang.LParenthesis, ELang.RParenthesis, new Op(o => o[0] = "#" ) },
                     new Token[] { ELang.ConstantComma, ELang.LParenthesis, ELang.RParenthesis, new Op(o => o[0] = "," ) },
                     new Token[] { ELang.StringEmpty, ELang.LParenthesis, ELang.RParenthesis, new Op(o => o[0] = "" ) },
+                    new Token[] { ELang.ArrayEmpty, ELang.LParenthesis, ELang.RParenthesis, new Op(o => o[0] = Array.Empty<object>() ) },
                 },
 
                 [ELang.StringAndMathFn] = new Token[][]
@@ -226,11 +236,11 @@ namespace JUST.Gramar
                     new Token[] { ELang.FirstIndexOf, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2]?.ToString().IndexOf(o[4]) ?? -1 )},
                     new Token[] { ELang.Substring, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2].ToString().Substring(Convert.ToInt32(o[4]), Convert.ToInt32(o[6])) )},
                     new Token[] { ELang.Concat, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], o[4], this._context}) )},
-                    new Token[] { ELang.Length, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2] is JValue ? o[2].Value : o[2], this._context }) )},
-                    new Token[] { ELang.Add, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[0] = (o[2] is JValue ? o[2].Value : o[2]) + (o[4] is JValue ? o[4].Value : o[4]) )},
-                    new Token[] { ELang.Subtract, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = (o[2] is JValue ? o[2].Value : o[2]) - (o[4] is JValue ? o[4].Value : o[4]) )},
-                    new Token[] { ELang.Multiply, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = (o[2] is JValue ? o[2].Value : o[2]) * (o[4] is JValue ? o[4].Value : o[4]) )},
-                    new Token[] { ELang.Divide, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[0] = (o[2] is JValue ? o[2].Value : o[2]) / (o[4] is JValue ? o[4].Value : o[4]) )},
+                    new Token[] { ELang.Length, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.Add, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[0] = o[2] + o[4] )},
+                    new Token[] { ELang.Subtract, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] - o[4] )},
+                    new Token[] { ELang.Multiply, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[2] * o[4] )},
+                    new Token[] { ELang.Divide, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = o[0] = o[2] / o[4] )},
                     new Token[] { ELang.Round, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARGS, new Op(o => o[0] = decimal.Round(Convert.ToDecimal(o[2]), Convert.ToInt32(o[4]), MidpointRounding.AwayFromZero) )},
                 },
                 [ELang.Operators] = new Token[][]
@@ -289,13 +299,53 @@ namespace JUST.Gramar
                 [ELang.ArrayLoop] = new Token[][]
                 {
                     //new Token[] { ELang.Loop, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke("valueof", true, new object[] { o[2], this._context }) )},
-                    new Token[] { ELang.Currentvalue, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { null, this._currentArrayToken[this._arrayAlias] }) )},
-                    new Token[] { ELang.Currentindex, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { this._parentArrayToken[this._arrayAlias], this._currentArrayToken[this._arrayAlias] }) )},
-                    new Token[] { ELang.Currentproperty, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { null, this._currentArrayToken[this._arrayAlias], this._context }) )},
-                    new Token[] { ELang.Lastindex, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { this._parentArrayToken[this._arrayAlias], this._currentArrayToken[this._arrayAlias] }) )},
-                    new Token[] { ELang.Lastvalue, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { this._parentArrayToken[this._arrayAlias], this._currentArrayToken[this._arrayAlias] }) )},
-                    new Token[] { ELang.Currentvalueatpath, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { null, this._currentArrayToken[this._arrayAlias], o[2], this._context }) )},
-                    new Token[] { ELang.Lastvalueatpath, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { this._parentArrayToken[this._arrayAlias], this._currentArrayToken[this._arrayAlias], o[2], this._context }) )},
+                    new Token[] { ELang.CurrentValueEval },
+                    new Token[] { ELang.CurrentIndexEval },
+                    new Token[] { ELang.CurrentPropertyEval },
+                    new Token[] { ELang.LastIndexEval },
+                    new Token[] { ELang.LastValueEval },
+                    new Token[] { ELang.CurrentValueAtPathEval },
+                    new Token[] { ELang.LastValueAtPathEval },
+                },
+                [ELang.CurrentValueEval] = new Token[][]
+                {
+                    new Token[] { ELang.Currentvalue, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], o[4]) )},
+                    new Token[] { ELang.Currentvalue, ELang.LParenthesis, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], null) )},
+                },
+                [ELang.CurrentIndexEval] = new Token[][]
+                {
+                    new Token[] { ELang.Currentindex, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], o[4]) )},
+                    new Token[] { ELang.Currentindex, ELang.LParenthesis, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], null) )},
+                },
+                [ELang.CurrentPropertyEval] = new Token[][]
+                {
+                    new Token[] { ELang.Currentproperty, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], o[4]) )},
+                    new Token[] { ELang.Currentproperty, ELang.LParenthesis, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], null) )},
+                },
+                [ELang.LastIndexEval] = new Token[][]
+                {
+                    new Token[] { ELang.Lastindex, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], o[4]) )},
+                    new Token[] { ELang.Lastindex, ELang.LParenthesis, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], null) )},
+                },
+                [ELang.LastValueEval] = new Token[][]
+                {
+                    new Token[] { ELang.Lastvalue, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], o[4]) )},
+                    new Token[] { ELang.Lastvalue, ELang.LParenthesis, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], null) )},
+                },
+                [ELang.CurrentValueAtPathEval] = new Token[][]
+                {
+                    new Token[] { ELang.Currentvalueatpath, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], o[4]) )},
+                    new Token[] { ELang.Currentvalueatpath, ELang.LParenthesis, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], null) )},
+                },
+                [ELang.LastValueAtPathEval] = new Token[][]
+                {
+                    new Token[] { ELang.Lastvalueatpath, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], o[4]) )},
+                    new Token[] { ELang.Lastvalueatpath, ELang.LParenthesis, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], null) )},
+                },
+                [ELang.IfGroupEval] = new Token[][]
+                {
+                    new Token[] { ELang.IfGroup, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = IfGroupEval(o[2], o[4]) )},
+                    new Token[] { ELang.IfGroup, ELang.LParenthesis, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = o[2] )},
                 },
 
                 [ELang.C_ARG] = new Token[][]
@@ -342,26 +392,54 @@ namespace JUST.Gramar
             return new ParserGenerator<ELang>(new Lexer<ELang>(tokens, ELang.Ignore), rules).CompileParser();
         }
 
-        private object LoopOverAlias(string loopPath, string loopAlias, string previousAlias, JUSTContext context)
+        private dynamic InvokeLoopFunction(string fn, string path, string alias)
         {
-            previousAlias = previousAlias != null ? previousAlias : $"loop{++context.LoopCounter}";
-            if (context.CurrentArrayToken?.Any() ?? false)
-            {
-                previousAlias = context.CurrentArrayToken.Last().Key;
-            }
-            else
-            {
-                context.CurrentArrayToken = new Dictionary<string, JToken> { { previousAlias, context.Input } };
-            }
+            this._arrayAlias = !string.IsNullOrEmpty(alias) ? alias : GetAlias(this._context);
+            object[] parameters = !string.IsNullOrEmpty(path) ? 
+                new object[] { null, this._context.CurrentArrayElement[this._arrayAlias], path, this._context } :
+                new object[] { null, this._context.CurrentArrayElement[this._arrayAlias], this._context };
+            return Invoke(fn, true, parameters);
+        }
 
-            JToken input = context.Input;
-            if (context.ParentArray != null)
-            {
-                context.Input = context.ParentArray?[previousAlias] ?? context.Input;
-            }
+        private bool AreEqual(dynamic arg1, dynamic arg2)
+        {
+            bool.TryParse(arg1?.ToString() ?? string.Empty, out bool arg1Bool);
+            bool.TryParse(arg2?.ToString() ?? string.Empty, out bool arg2Bool);
 
+            return 
+                arg1?.Equals(arg2) ||
+                arg1?.Equals(arg2Bool) || 
+                arg2?.Equals(arg1) ||
+                arg2?.Equals(arg1Bool);
+        }
+
+        private dynamic IfGroupEval(string isIncluded, dynamic arg2)
+        {
+            bool.TryParse(isIncluded, out bool result);
+            if (result)
+            {
+                return arg2;
+            }
+            return null;
+        }
+
+        private string GetAlias(JUSTContext context)
+        {
+            return this._arrayAlias ?? context.CurrentArrayElement.Last().Key;
+        }
+
+        private JArray LoopOverAlias(string loopPath, string loopAlias, string previousAlias, JUSTContext context)
+        {
+            previousAlias = previousAlias != null ? previousAlias : context.CurrentArrayElement.Last().Key;
+
+            context.Input = context.CurrentArrayElement[previousAlias];
+            
             object loopToken = Invoke("valueof", true, new object[] { loopPath, context });
-            KeyValuePair<string, JArray> k = new KeyValuePair<string, JArray>(previousAlias, loopToken as JArray);
+            int loopCounter = ++context.LoopCounter;
+
+            JArray loopArray = GetLoopArray(loopToken);
+            
+            KeyValuePair<string, JArray> k = new KeyValuePair<string, JArray>(loopAlias ?? $"loop{loopCounter}", loopArray);
 
             if (context.ParentArray == null)
             {
@@ -369,8 +447,26 @@ namespace JUST.Gramar
             }
             context.ParentArray.Add(k);
 
-            context.Input = input;
-            return loopToken;
+            return loopArray;
+        }
+
+        private JArray GetLoopArray(object loopToken)
+        {
+            JArray result;
+            if (loopToken is Array)
+            {
+                result = JArray.FromObject(loopToken);
+            }
+            else if (loopToken is JArray)
+            {
+                result = loopToken as JArray;
+            }
+            else
+            {
+                result = new JArray();
+                result.Add(loopToken);
+            }
+            return result;
         }
 
         private object InvokeCustomFunction(string assemblyName, string method, object[] args, JUSTContext context)
@@ -486,6 +582,10 @@ namespace JUST.Gramar
 
         private object Xconcat(dynamic arg1, dynamic arg2)
         {
+            if (arg1 == null)
+            {
+                return arg2;
+            }
             if (arg1 is Array arr1)
             {
                 List<object> result = new List<object>();
@@ -493,7 +593,7 @@ namespace JUST.Gramar
                 {
                     result.Add(o);
                 }
-                if(arg2 is Array arr) 
+                if(arg2 is Array arr)
                 {
                     foreach (var o in arr)
                     {
@@ -502,7 +602,10 @@ namespace JUST.Gramar
                 }
                 else 
                 {
-                    result.Add(arg2);
+                    if (arg2 != null)
+                    {
+                        result.Add(arg2);
+                    }
                 }
                 return result.ToArray();
             }
@@ -511,6 +614,12 @@ namespace JUST.Gramar
                 return arg1 + arg2;
             }
 
+        }
+
+        public void Dispose()
+        {
+            this._parser = null;
+            //Instance = null;
         }
     }
 }

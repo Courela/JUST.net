@@ -158,8 +158,8 @@ namespace JUST
             return instance;
         }
 
-        internal IDictionary<string, JArray> ParentArray;
-        internal IDictionary<string, JToken> CurrentArrayToken;
-        internal int LoopCounter;
+        public IDictionary<string, JArray> ParentArray;
+        public IDictionary<string, JToken> CurrentArrayElement;
+        public int LoopCounter;
     }
 }

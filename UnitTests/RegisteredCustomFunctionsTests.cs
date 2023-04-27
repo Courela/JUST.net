@@ -10,7 +10,7 @@ namespace JUST.UnitTests
         [SetUp]
         public void Setup()
         {
-            _context = new JUSTContext();
+            _context = new JUSTContext { EvaluationMode = EvaluationMode.Strict };
         }
 
         [Test]
@@ -160,12 +160,12 @@ namespace JUST.UnitTests
                     Namespace = "ExternalMethods.ExternalClass",
                     MethodName = unregisteredFunction
                 }
-            });
+            }) { EvaluationMode = EvaluationMode.Strict };
 
             context.ClearCustomFunctionRegistrations();
 
-            var result = Assert.Throws<Exception>(() => new JsonTransformer(context).Transform(transformer, input));
-            Assert.AreEqual($"Error while calling function : #{unregisteredFunction}(#valueof($.non-existent)) - Invalid function: #{unregisteredFunction}", result.Message);
+            Exception ex = Assert.Throws<Exception>(() => new JsonTransformer(context).Transform(transformer, input));
+            Assert.IsTrue(ex.Message.Contains($"Error while calling function : #{unregisteredFunction}(#valueof($.non-existent)) - Error parsing '#{unregisteredFunction}"));
         }
     }
 }

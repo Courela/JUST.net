@@ -117,7 +117,7 @@ namespace JUST.UnitTests.Gramar
                 Input = this._input,
                 EvaluationMode = EvaluationMode.Strict,
             };
-            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(expression, null, null, context);
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(expression, context);
             
             PrintResults(parseResult);
 
@@ -139,8 +139,6 @@ namespace JUST.UnitTests.Gramar
             };
             ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null,
-                null,
                 context);
             
             PrintResults(parseResult);
@@ -166,8 +164,6 @@ namespace JUST.UnitTests.Gramar
             };
             ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null,
-                null,
                 context);
             
             PrintResults(parseResult);
@@ -199,8 +195,6 @@ namespace JUST.UnitTests.Gramar
             };
             ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null,
-                null,
                 context);
             
             PrintResults(parseResult);
@@ -229,11 +223,10 @@ namespace JUST.UnitTests.Gramar
             {
                 Input = this._input,
                 EvaluationMode = EvaluationMode.Strict,
+                CurrentArrayElement = new Dictionary<string, JToken>() {{ "root", this._input }}
             };
             ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null,
-                null,
                 context);
             
             PrintResults(parseResult);
@@ -258,11 +251,12 @@ namespace JUST.UnitTests.Gramar
             {
                 Input = this._input.SelectToken("$.arrayobjects"),
                 EvaluationMode = EvaluationMode.Strict,
+                ParentArray = new Dictionary<string, JArray>{ { arrayAlias, parentArray }},
+                CurrentArrayElement = new Dictionary<string, JToken>{ { arrayAlias, loopElement }},
+                LoopCounter = 1,
             };
             ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                new Dictionary<string, JArray>{ { arrayAlias,  parentArray }},
-                new Dictionary<string, JToken>{ { arrayAlias,  loopElement }},
                 context);
             
             PrintResults(parseResult);
@@ -286,11 +280,12 @@ namespace JUST.UnitTests.Gramar
             {
                 Input = this._input.SelectToken("$.arrayobjects"),
                 EvaluationMode = EvaluationMode.Strict,
+                ParentArray = new Dictionary<string, JArray>{ { arrayAlias, parentArray }},
+                CurrentArrayElement = new Dictionary<string, JToken>{ { arrayAlias, loopElement }},
+                LoopCounter = 1,
             };
             ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                new Dictionary<string, JArray>{ { arrayAlias,  parentArray }},
-                new Dictionary<string, JToken>{ { arrayAlias,  loopElement }},
                 context);
             
             PrintResults(parseResult);
@@ -314,11 +309,12 @@ namespace JUST.UnitTests.Gramar
             {
                 Input = this._input.SelectToken("$.arrayobjects"),
                 EvaluationMode = EvaluationMode.Strict,
+                ParentArray = new Dictionary<string, JArray>{ { arrayAlias, parentArray }},
+                CurrentArrayElement = new Dictionary<string, JToken>{ { arrayAlias, loopElement }},
+                LoopCounter = 1,
             };
             ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                new Dictionary<string, JArray>{ { arrayAlias,  parentArray }},
-                new Dictionary<string, JToken>{ { arrayAlias,  loopElement }},
                 context);
             
             PrintResults(parseResult);
@@ -341,11 +337,11 @@ namespace JUST.UnitTests.Gramar
             {
                 Input = this._input.SelectToken("$.animals"),
                 EvaluationMode = EvaluationMode.Strict,
+                ParentArray = new Dictionary<string, JArray>{ { arrayAlias, parentArray }},
+                CurrentArrayElement = new Dictionary<string, JToken>{ { arrayAlias, loopElement }},
             };
             ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                new Dictionary<string, JArray>{ { arrayAlias,  parentArray }},
-                new Dictionary<string, JToken>{ { arrayAlias,  loopElement }},
                 context);
             
             PrintResults(parseResult);
@@ -368,7 +364,6 @@ namespace JUST.UnitTests.Gramar
             };
             ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null, null,
                 context);
             
             PrintResults(parseResult);
@@ -391,7 +386,6 @@ namespace JUST.UnitTests.Gramar
             };
             ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null, null,
                 context);
             
             PrintResults(parseResult);
@@ -421,8 +415,6 @@ namespace JUST.UnitTests.Gramar
             };
             ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
                 expression,
-                null,
-                null,
                 context);
             
             PrintResults(parseResult);
@@ -476,7 +468,9 @@ namespace JUST.UnitTests.Gramar
             };
             context.RegisterCustomFunction(null, "JUST.UnitTests.Gramar.JUSTGrammarTests", method, func);
 
-            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(expression, null, null, context);
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
+                expression,
+                context);
             
             PrintResults(parseResult);
 
@@ -497,7 +491,9 @@ namespace JUST.UnitTests.Gramar
                 EvaluationMode = EvaluationMode.Strict,
             };
             
-            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(expression, null, null, context);
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
+                expression,
+                context);
             
             PrintResults(parseResult);
 
@@ -519,7 +515,9 @@ namespace JUST.UnitTests.Gramar
                 EvaluationMode = EvaluationMode.Strict,
             };
 
-            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(expression, null, null, context);
+            ParseResult parseResult = JUST.Gramar.Grammar<JsonPathSelectable>.Instance.Parse(
+                expression,
+                context);
             
             PrintResults(parseResult);
 

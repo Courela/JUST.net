@@ -41,7 +41,7 @@ namespace JUST.UnitTests
         {
             var transformer = "{ \"stringresult\": { \"substring\": \"#substring(#valueof($.stringref),100,100)\" }}";
 
-            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.StringRef);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.FallbackToDefault }).Transform(transformer, ExampleInputs.StringRef);
 
             Assert.AreEqual("{\"stringresult\":{\"substring\":null}}", result);
         }

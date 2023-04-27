@@ -12,7 +12,7 @@ namespace JUST.UnitTests
             const string input = "{ \"string\": \"some words\", \"integer\": 123, \"boolean\": true }";
             const string transformer = "{ \"result\": \"#ifcondition(true,#valueof($.boolean),truevalue,falsevalue)\" }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":\"truevalue\"}", result);
         }
@@ -23,7 +23,7 @@ namespace JUST.UnitTests
             const string input = "{ \"string\": \"some words\", \"integer\": 123, \"boolean\": true }";
             const string transformer = "{ \"result\": \"#ifcondition(dummy,#valueof($.string),truevalue,falsevalue)\" }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":\"falsevalue\"}", result);
         }
@@ -34,7 +34,7 @@ namespace JUST.UnitTests
             const string input = "{ \"string\": \"some words\", \"integer\": 123, \"boolean\": true }";
             const string transformer = "{ \"result\": \"#ifcondition(#valueof($.boolean),true,truevalue,falsevalue)\" }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":\"truevalue\"}", result);
         }
@@ -45,7 +45,7 @@ namespace JUST.UnitTests
             const string input = "{ \"string\": \"some words\", \"integer\": 123, \"boolean\": true }";
             const string transformer = "{ \"result\": \"#ifcondition(#valueof($.integer),555,truevalue,falsevalue)\" }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":\"falsevalue\"}", result);
         }
@@ -56,7 +56,7 @@ namespace JUST.UnitTests
             const string input = "{ \"string\": \"some words\", \"integer\": 123, \"boolean\": true, \"same_integer\": 123 }";
             const string transformer = "{ \"result\": \"#ifcondition(#valueof($.integer),#valueof($.same_integer),truevalue,falsevalue)\" }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":\"truevalue\"}", result);
         }
@@ -67,7 +67,7 @@ namespace JUST.UnitTests
             const string input = "{ \"string\": \"some words\", \"integer\": 123, \"boolean\": true, \"same_integer\": 123 }";
             const string transformer = "{ \"result\": \"#ifcondition(#valueof($.string),#valueof($.same_integer),truevalue,falsevalue)\" }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":\"falsevalue\"}", result);
         }
@@ -78,7 +78,7 @@ namespace JUST.UnitTests
             const string input = "{ \"string\": \"some words\", \"integer\": 123, \"boolean\": true, \"same_integer\": 123 }";
             const string transformer = "{ \"result\": \"#ifcondition(#valueof($.integer),#valueof($.same_integer),#valueof($.boolean),falsevalue)\" }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":true}", result);
         }
@@ -89,7 +89,7 @@ namespace JUST.UnitTests
             const string input = "{ \"string\": \"some words\", \"integer\": 123, \"boolean\": true, \"other_integer\": 1235 }";
             const string transformer = "{ \"result\": \"#ifcondition(#valueof($.integer),#valueof($.other_integer),truevalue,#valueof($.other_integer))\" }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":1235}", result);
         }
@@ -100,7 +100,7 @@ namespace JUST.UnitTests
             const string input = "{ \"string\": \"some words\", \"integer\": 123, \"boolean\": true, \"other_integer\": 1235 }";
             const string transformer = "{ \"result\": \"#ifcondition(#valueof($.boolean),true,#valueof($.other_integer),#valueof(invalid.jsonPath.$))\" }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":1235}", result);
         }
@@ -111,7 +111,7 @@ namespace JUST.UnitTests
             const string input = "{ \"string\": \"some words\", \"integer\": 123, \"boolean\": true, \"other_integer\": 1235 }";
             const string transformer = "{ \"result\": \"#ifcondition(#valueof($.boolean),false,#valueof(invalid.jsonPath.$),#valueof($.other_integer))\" }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":1235}", result);
         }
@@ -122,7 +122,7 @@ namespace JUST.UnitTests
             const string input = "{ \"Tree\": { \"Branch\": \"leaf\", \"Flower\": \"Rose\" } }";
             const string transformer = "{ \"Result\": { \"Header\": \"JsonTransform\", \"#ifgroup(#exists($.Tree.Branch))\": { \"State\": { \"Value1\": \"#valueof($.Tree.Branch)\", \"Value2\": \"#valueof($.Tree.Flower)\" } } } }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"Result\":{\"Header\":\"JsonTransform\",\"State\":{\"Value1\":\"leaf\",\"Value2\":\"Rose\"}}}", result);
         }
@@ -133,7 +133,7 @@ namespace JUST.UnitTests
             const string input = "{ \"Tree\": { \"Branch\": \"leaf\", \"Flower\": \"Rose\" } }";
             const string transformer = "{ \"Result\": { \"Header\": \"JsonTransform\", \"#ifgroup(#exists($.Tree.Root))\": { \"State\": { \"Value1\": \"#valueof($.Tree.Branch)\", \"Value2\": \"#valueof($.Tree.Flower)\" } } } }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"Result\":{\"Header\":\"JsonTransform\"}}", result);
         }
@@ -143,11 +143,7 @@ namespace JUST.UnitTests
         {
             var input = "{ \"arr\": [\"1234\", \"5678\" ]}";
             var transformer = "{\"result\": [ \"#ifgroup(False,#valueof($.arr[0]))\", \"#ifgroup(True,#valueof($.arr[1]))\" ] }";
-            var context = new JUSTContext
-            {
-                EvaluationMode = EvaluationMode.Strict
-            };
-            var result = new JsonTransformer(context).Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":[\"5678\"]}", result);
         }
@@ -158,7 +154,9 @@ namespace JUST.UnitTests
             const string input = "{ \"Tree\": { \"Branch\": \"leaf\", \"Flower\": \"Rose\" } }";
             const string transformer = "{ \"Result\": { \"Header\": \"JsonTransform\", \"#ifgroup(wrong_val)\": { \"State\": { \"Value1\": \"#valueof($.Tree.Branch)\", \"Value2\": \"#valueof($.Tree.Flower)\" }} } }";
 
-            Assert.Throws<FormatException>(() => new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input));
+            Exception ex = Assert.Throws<Exception>(() => new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input));
+
+            Assert.IsTrue(ex.Message.Contains("Error while calling function : wrong_val - Error parsing 'wrong_val': "));
         }
 
         [Test, Category("IfGroup"), Category("FallbackToDefault")]
@@ -167,7 +165,7 @@ namespace JUST.UnitTests
             const string input = "{ \"Tree\": { \"Branch\": \"leaf\", \"Flower\": \"Rose\" } }";
             const string transformer = "{ \"Result\": { \"Header\": \"JsonTransform\", \"#ifgroup(wrong_val)\": { \"State\": { \"Value1\": \"#valueof($.Tree.Branch)\", \"Value2\": \"#valueof($.Tree.Flower)\" }} } }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.FallbackToDefault }).Transform(transformer, input);
 
             Assert.AreEqual("{\"Result\":{\"Header\":\"JsonTransform\"}}", result);
         }
@@ -188,7 +186,7 @@ namespace JUST.UnitTests
         {
             const string transformer = "{ \"iteration\": { \"#loop($.arrayobjects)\": { \"#ifgroup(#stringequals(#currentvalueatpath($.country.name),UK))\": { \"current_value_at_path\": \"#currentvalueatpath($.country.name)\" } } }}";
 
-            var result = new JsonTransformer().Transform(transformer, ExampleInputs.ObjectArray);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.ObjectArray);
 
             Assert.AreEqual("{\"iteration\":[{},{\"current_value_at_path\":\"UK\"},{}]}", result);
         }
@@ -241,7 +239,7 @@ namespace JUST.UnitTests
             const string input = "{ \"val\": \"test\" }";
             const string transformer = "{ \"result\": \"#ifcondition(something_else,#valueof($.val),truevalue,#arrayempty())\" }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":[]}", result);
         }
@@ -252,7 +250,7 @@ namespace JUST.UnitTests
             const string input = "{ \"Order\": { \"OrderID\": \"1001\", \"OrderApprover\": \"John\" }}";
             const string transformer = "{ \"#ifgroup(#exists($.Order.OrderID))\": { \"OrderID\": \"#valueof($.Order.OrderID)\", \"Approver\": \"#valueof($.Order.OrderApprover)\" }, \"#ifgroup(#exists($.Order[0].OrderID))\": { \"orders\": { \"#loop($.Order)\" : {  \"OrderID\": \"#currentvalueatpath($.OrderID)\",  \"Approver\": \"#currentvalueatpath($.OrderApprover)\" } } }}";
 
-            var result = new JsonTransformer().Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"OrderID\":\"1001\",\"Approver\":\"John\"}", result);
         }

@@ -33,7 +33,7 @@ namespace JUST.UnitTests.Arrays
             const string transformer = "{ \"Result\": \"#grouparrayby($.Vehicle,type:a|company,all)\" }";
             const string input = "{ \"Vehicle\": [ { \"type:a\": \"air\", \"company\": \"Boeing\", \"name\": \"airplane\" }, { \"type:a\": \"air\", \"company\": \"Concorde\", \"name\": \"airplane\" }, { \"type:a\": \"air\", \"company\": \"Boeing\", \"name\": \"Chopper\" }, { \"type:a\": \"land\", \"company\": \"GM\", \"name\": \"car\" }, { \"type:a\": \"sea\", \"company\": \"Viking\", \"name\": \"ship\" }, { \"type:a\": \"land\", \"company\": \"GM\", \"name\": \"truck\" } ] }";
 
-            var context = new JUSTContext() { SplitGroupChar = '|' };
+            var context = new JUSTContext() { SplitGroupChar = '|', EvaluationMode = EvaluationMode.Strict };
             var result = new JsonTransformer(context).Transform(transformer, input);
 
             Assert.AreEqual("{\"Result\":[{\"type:a\":\"air\",\"company\":\"Boeing\",\"all\":[{\"name\":\"airplane\"},{\"name\":\"Chopper\"}]},{\"type:a\":\"air\",\"company\":\"Concorde\",\"all\":[{\"name\":\"airplane\"}]},{\"type:a\":\"land\",\"company\":\"GM\",\"all\":[{\"name\":\"car\"},{\"name\":\"truck\"}]},{\"type:a\":\"sea\",\"company\":\"Viking\",\"all\":[{\"name\":\"ship\"}]}]}", result);

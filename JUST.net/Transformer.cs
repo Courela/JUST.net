@@ -9,8 +9,6 @@ namespace JUST
 {
     public abstract class Transformer
     {
-        protected int _loopCounter = 0;
-
         protected readonly JUSTContext Context;
 
         public Transformer(JUSTContext context)
@@ -494,7 +492,15 @@ namespace JUST
 
         public static int currentindex(JArray array, JToken currentElement)
         {
-            return array.IndexOf(currentElement);
+            for (int i = 0; i < array.Count; i++)
+            {
+                JToken item = array[i];
+                if (item?.Equals(currentElement) ?? currentElement == null)
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         public static object lastvalue(JArray array, JToken currentElement)
