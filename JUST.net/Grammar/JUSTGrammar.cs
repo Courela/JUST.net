@@ -7,46 +7,45 @@ using System.Linq;
 
 namespace JUST.Gramar
 {
-    public class Grammar<TSelectable> : IDisposable where TSelectable : ISelectableToken
+    public class Grammar<TSelectable> where TSelectable : ISelectableToken
     {
-        private Parser<ELang> _parser;
+        private static readonly object _lock = new object();
+        
+        private static Parser<ELang> _parser;
 
         private string _arrayAlias;
         private JUSTContext _context;
 
         private Grammar()
         {
-            if (this._parser == null)
-            {
-                this._parser = GetParser();
-            }
         }
 
         public ParseResult Parse(string expression, JUSTContext context)
         {
             this._context = context;
-            return this._parser.Parse(expression);
+            return _parser.Parse(expression);
         }
 
         public static Grammar<TSelectable> Instance
         {
             get
             {
-                return Nested.Instance;
+                if (_parser == null)
+                {
+                    lock(_lock)
+                    {
+                        _parser = GetParser();
+                    }
+                }
             }
         }
 
-        private class Nested : IDisposable
+        private class Nested
         {
             static Nested()
             {
             }
             internal static Grammar<TSelectable> Instance = new Grammar<TSelectable>();
-
-            public void Dispose()
-            {
-                Instance = null;
-            }
         }
 
         protected enum ELang
@@ -614,12 +613,6 @@ namespace JUST.Gramar
                 return arg1 + arg2;
             }
 
-        }
-
-        public void Dispose()
-        {
-            this._parser = null;
-            //Instance = null;
         }
     }
 }
