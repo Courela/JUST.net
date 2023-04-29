@@ -533,5 +533,16 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"GenericCustomer\":[{\"GenericComponent1\":\"Value1\",\"GenericComponent2\":\"Value2\",\"GenericComponent3\":\"Value3\"},{\"GenericComponent1\":\"Value7\",\"GenericComponent2\":\"Value8\",\"GenericComponent3\":\"Value9\"},{\"GenericComponent1\":\"Value4\",\"GenericComponent2\":\"Value5\",\"GenericComponent3\":\"Value6\"},{\"GenericComponent1\":\"Value10\",\"GenericComponent2\":\"Value11\",\"GenericComponent3\":\"Value12\"}]}", result);
         }
+
+        [Test]
+        public void Issue269()
+        {
+            const string input = "{ \"employees\": [{ \"employee_unique_id\": \"FA6FDECD-DFAD-4C6D-80E8-752643BF4C9E\",  \"clinician_id\": \"178\",  \"salutation\": null,  \"first_name\": \"Valid\",  \"can_drive\": true,  \"locations\": [{   \"location_id\": 23,   \"location_name\": \"test\"  }, {   \"location_id\": 24,   \"location_name\": \"test444\"  }  ] }, { \"exists\": \"true\", \"employee_unique_id\": \"GA6FDECD-DFAD-4C6D-80E8-752643BF4C9O\",  \"clinician_id\": \"179\",  \"salutation\": null,  \"first_name\": \"Valid222\",  \"can_drive\": false,  \"locations\": [{   \"location_id\": 23,   \"location_name\": \"test\"  }, {   \"location_id\": 24,   \"location_name\": \"test444\"  }  ] } ]}";
+            const string transformer = "{ \"employees\": { \"#loop($.employees)\": { \"#ifgroup(#existsandnotempty($.exists))\": { \"print\": true, \"employee_unique_id\": \"#currentvalueatpath($.employee_unique_id)\" } } } }";
+
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict}).Transform(transformer, input);
+
+            Assert.AreEqual("{\"employees\":[{\"employee_unique_id\":\"FA6FDECD-DFAD-4C6D-80E8-752643BF4C9E\"}]}", result);
+        }
     }
 }
