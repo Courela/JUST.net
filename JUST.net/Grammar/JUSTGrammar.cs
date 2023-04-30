@@ -1,23 +1,25 @@
-using System;
-using System.Collections.Generic;
 using CSharpParserGenerator;
 using JUST.net.Selectables;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace JUST.Gramar
 {
-    public class Grammar<TSelectable> where TSelectable : ISelectableToken
+    public class Grammar<TSelectable> : IDisposable where TSelectable : ISelectableToken
     {
         private static readonly object _lock = new object();
         
-        private static Parser<ELang> _parser;
+        private static Grammar<TSelectable> _instance;
 
         private string _arrayAlias;
+        private Parser<ELang> _parser;
         private JUSTContext _context;
 
         private Grammar()
         {
+            _parser = GetParser();
         }
 
         public ParseResult Parse(string expression, JUSTContext context)
@@ -30,22 +32,15 @@ namespace JUST.Gramar
         {
             get
             {
-                if (_parser == null)
+                if (_instance == null)
                 {
                     lock(_lock)
                     {
-                        _parser = GetParser();
+                        _instance = new Grammar<TSelectable>();
                     }
                 }
+                return _instance;
             }
-        }
-
-        private class Nested
-        {
-            static Nested()
-            {
-            }
-            internal static Grammar<TSelectable> Instance = new Grammar<TSelectable>();
         }
 
         protected enum ELang
@@ -613,6 +608,11 @@ namespace JUST.Gramar
                 return arg1 + arg2;
             }
 
+        }
+
+        public void Dispose()
+        {
+            _instance = null;
         }
     }
 }
