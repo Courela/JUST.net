@@ -304,7 +304,7 @@ namespace JUST.Gramar
                 [ELang.CurrentValueEval] = new Token[][]
                 {
                     new Token[] { ELang.Currentvalue, ELang.LParenthesis, ELang.ARG, ELang.Comma, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], o[4]) )},
-                    new Token[] { ELang.Currentvalue, ELang.LParenthesis, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], o[2], null) )},
+                    new Token[] { ELang.Currentvalue, ELang.LParenthesis, ELang.ARG, ELang.RParenthesis, new Op(o => o[0] = InvokeLoopFunction(o[0], null, o[2]) )},
                 },
                 [ELang.CurrentIndexEval] = new Token[][]
                 {
@@ -390,8 +390,8 @@ namespace JUST.Gramar
         {
             this._arrayAlias = !string.IsNullOrEmpty(alias) ? alias : GetAlias(this._context);
             object[] parameters = !string.IsNullOrEmpty(path) ? 
-                new object[] { null, this._context.CurrentArrayElement[this._arrayAlias], path, this._context } :
-                new object[] { null, this._context.CurrentArrayElement[this._arrayAlias], this._context };
+                new object[] { this._context.ParentArray[this._arrayAlias], this._context.CurrentArrayElement[this._arrayAlias], path, this._context } :
+                new object[] { this._context.ParentArray[this._arrayAlias], this._context.CurrentArrayElement[this._arrayAlias], this._context };
             return Invoke(fn, true, parameters);
         }
 
