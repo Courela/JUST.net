@@ -14,11 +14,14 @@ namespace JUST.UnitTests
                     "{ \"#transform($)\": [ " + 
                         "{ \"condition\": { \"#loop($.values)\": { \"test\": \"#ifcondition(#stringcontains(#valueof($.d[0]),#currentvalue()),True,yes,no)\" } } }, " +
                         "{ \"intermediate_transform\": \"#valueof($.condition)\" }," +
-                          "\"#exists($.intermediate_transform[?(@.test=='yes')])\" ] } }";
+                          "\"#exists($.intermediate_transform[?/(@.test=='yes'/)])\" ] } }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
-
-            Assert.AreEqual("{\"result\":true}", result);
+            
+            using(JsonTransformer t = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }))
+            {
+                var result = t.Transform(transformer, input);
+                Assert.AreEqual("{\"result\":true}", result);
+            }
         }
 
         [Test]
@@ -30,11 +33,13 @@ namespace JUST.UnitTests
                     "{ \"#transform($)\": [ " + 
                         "{ \"condition\": { \"#loop($.values)\": { \"test\": \"#ifcondition(#stringcontains(#valueof($.d[0]),#currentvalue()),True,yes,no)\" } } }, " +
                         "{ \"intermediate_transform\": \"#valueof($.condition)\" }," +
-                        "{ \"result\": \"#exists($.intermediate_transform[?(@.test=='yes')])\" } ] } }";
+                        "{ \"result\": \"#exists($.intermediate_transform[?/(@.test=='yes'/)])\" } ] } }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
-
-            Assert.AreEqual("{\"object\":{\"result\":true}}", result);
+            using(JsonTransformer t = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }))
+            {
+                var result = t.Transform(transformer, input);
+                Assert.AreEqual("{\"object\":{\"result\":true}}", result);
+            }
         }
 
         [Test]
@@ -46,11 +51,13 @@ namespace JUST.UnitTests
                     "{ \"#transform($.select)\": [ " + 
                         "{ \"condition\": { \"#loop($.values)\": { \"test\": \"#ifcondition(#stringcontains(#valueof($.d[0]),#currentvalue()),True,yes,no)\" } } }, " +
                         "{ \"intermediate_transform\": \"#valueof($.condition)\" }," +
-                        "{ \"result\": \"#exists($.intermediate_transform[?(@.test=='yes')])\" } ] } }";
+                        "{ \"result\": \"#exists($.intermediate_transform[?/(@.test=='yes'/)])\" } ] } }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
-
-            Assert.AreEqual("{\"select_token\":{\"result\":true}}", result);
+            using(JsonTransformer t = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }))
+            {
+                var result = t.Transform(transformer, input);
+                Assert.AreEqual("{\"select_token\":{\"result\":true}}", result);
+            }
         }
 
         [Test]
@@ -63,12 +70,14 @@ namespace JUST.UnitTests
                             "\"#transform($)\": [ " + 
                                 "{ \"condition\": { \"#loop($.values)\": { \"test\": \"#ifcondition(#stringcontains(#currentvalueatpath($.d[0],selectLoop),#currentvalue()),True,yes,no)\" } } }, " +
                                 "{ \"intermediate_transform\": \"#valueof($.condition)\" }," +
-                                "{ \"result\": \"#exists($.intermediate_transform[?(@.test=='yes')])\" } ] " +
+                                "{ \"result\": \"#exists($.intermediate_transform[?/(@.test=='yes'/)])\" } ] " +
                         " } } }";
 
-            var result = new JsonTransformer().Transform(transformer, input);
-
-            Assert.AreEqual("{\"loop\":[{\"result\":true},{\"result\":false}]}", result);
+            using(JsonTransformer t = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }))
+            {
+                var result = t.Transform(transformer, input);
+                Assert.AreEqual("{\"loop\":[{\"result\":true},{\"result\":false}]}", result);
+            }
         }
     }
 }

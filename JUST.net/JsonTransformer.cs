@@ -260,7 +260,7 @@ namespace JUST
                     ConditionalGroupOperation(property.Name, arguments, ref condProps, ref tokenToForm, childToken);
                     break;
                 case "loop":
-                    LoopOperation(property.Name, arguments, ref loopProperties, ref arrayToForm, ref dictToForm, childToken);
+                    LoopOperation(property.Name, ref loopProperties, ref arrayToForm, ref dictToForm, childToken);
                     isLoop = true;
                     break;
                 case "eval":
@@ -272,9 +272,8 @@ namespace JUST
             }
         }
 
-        private void LoopOperation(string propertyName, string arguments, ref List<string> loopProperties, ref JArray arrayToForm, ref JObject dictToForm, JToken childToken)
+        private void LoopOperation(string propertyName, ref List<string> loopProperties, ref JArray arrayToForm, ref JObject dictToForm, JToken childToken)
         {
-            JToken input = Context.Input;
             object function = ParseFunction(propertyName);
             JArray arrayToken = function is JArray ? function as JArray : JArray.FromObject(function);
             
@@ -314,14 +313,13 @@ namespace JUST
             Context.ParentArray.Remove(key);
             Context.CurrentArrayElement.Remove(key);
             Context.LoopCounter--;
-            Context.Input = input;
         }
 
         private void TranformOperation(JProperty property, string arguments)
         {
             string[] argumentArr = ExpressionHelper.SplitArguments(arguments, Context.EscapeChar);
 
-            object functionResult = ParseArgument(null, argumentArr[0]);
+            object functionResult = ParseArgument(argumentArr[0]);
             if (!(functionResult is string jsonPath))
             {
                 throw new ArgumentException($"Invalid path for #transform: '{argumentArr[0]}' resolved to null!");
@@ -331,7 +329,7 @@ namespace JUST
             string alias = null;
             if (argumentArr.Length > 1)
             {
-                alias = ParseArgument(null, argumentArr[1]) as string;
+                alias = ParseArgument(argumentArr[1]) as string;
                 if (!(Context.CurrentArrayElement?.ContainsKey(alias) ?? false))
                 {
                     throw new ArgumentException($"Unknown loop alias: '{argumentArr[1]}'");
@@ -348,26 +346,43 @@ namespace JUST
             
             if (property.Value.Type == JTokenType.Array)
             {
-                JToken originalInput = Context.Input;
-                Context.Input = selectedToken;
-                for (int i = 0; i < property.Value.Count(); i++)
-                {
-                    JToken token = property.Value[i];
-                    if (token.Type == JTokenType.String)
+                InvokeWithBackup((key) => {
+                    Context.Input = selectedToken;
+                    Context.CurrentArrayElement.Remove(key);
+                    Context.CurrentArrayElement.Add(key, selectedToken);
+
+                    for (int i = 0; i < property.Value.Count(); i++)
                     {
-                        var obj = ParseFunction(token.Value<string>());
-                        token.Replace(GetToken(obj));
+                        JToken token = property.Value[i];
+                        if (token.Type == JTokenType.String)
+                        {
+                            var obj = ParseFunction(token.Value<string>());
+                            token.Replace(GetToken(obj));
+                        }
+                        else
+                        {
+                            RecursiveEvaluate(ref token);
+                        }
+                        
+                        Context.Input = token;
+                        Context.CurrentArrayElement.Remove(key);
+                        Context.CurrentArrayElement.Add(key, token);
                     }
-                    else
-                    {
-                        RecursiveEvaluate(ref token);
-                    }
-                    Context.Input = token;
-                }
-                
-                Context.Input = originalInput;
+                });
             }
             property.Parent.Replace(property.Value[property.Value.Count() - 1]);
+        }
+
+        private void InvokeWithBackup(Action<string> method)
+        {
+            JToken originalInput = Context.Input;
+            KeyValuePair<string, JToken> originalCurrentArrayElem = Context.CurrentArrayElement.Last();
+            
+            method(originalCurrentArrayElem.Key);
+
+            Context.Input = originalInput;
+            Context.CurrentArrayElement.Remove(originalCurrentArrayElem.Key);
+            Context.CurrentArrayElement.Add(originalCurrentArrayElem);
         }
 
         private void PostOperationsBuildUp(ref JToken parentToken, List<JToken> tokenToForm)
@@ -768,7 +783,7 @@ namespace JUST
         {
             string[] argumentArr = ExpressionHelper.SplitArguments(arguments, Context.EscapeChar);
             string path = argumentArr[0];
-            if (!(ParseArgument(null, path) is string jsonPath))
+            if (!(ParseArgument(path) is string jsonPath))
             {
                 throw new ArgumentException($"Invalid path for #copy: '{argumentArr[0]}' resolved to null!");
             }
@@ -776,7 +791,7 @@ namespace JUST
             string alias = null;
             if (argumentArr.Length > 1)
             {
-                alias = ParseArgument(null, argumentArr[1]) as string;
+                alias = ParseArgument(argumentArr[1]) as string;
                 if (!(Context.CurrentArrayElement?.ContainsKey(alias) ?? false))
                 {
                     throw new ArgumentException($"Unknown loop alias: '{argumentArr[1]}'");
@@ -797,11 +812,11 @@ namespace JUST
             {
                 throw new Exception("Function #replace needs at least two arguments - 1. path to be replaced, 2. token to replace with.");
             }
-            if (!(ParseArgument(null, argumentArr[0]) is string key))
+            if (!(ParseArgument(argumentArr[0]) is string key))
             {
                 throw new ArgumentException($"Invalid path for #replace: '{argumentArr[0]}' resolved to null!");
             }
-            object str = ParseArgument(null, argumentArr[1]);
+            object str = ParseArgument(argumentArr[1]);
             JToken newToken = GetToken(str);
             return new KeyValuePair<string, JToken>(key, newToken);
         }
@@ -811,7 +826,7 @@ namespace JUST
         #region Delete
         private string Delete(string argument)
         {
-            if (!(ParseArgument(null, argument) is string result))
+            if (!(ParseArgument(argument) is string result))
             {
                 throw new ArgumentException($"Invalid path for #delete: '{argument}' resolved to null!");
             }
@@ -823,21 +838,14 @@ namespace JUST
 
         private object ParseFunction(string functionString)
         {
-            try
+            ParseResult parseResult = this.Grammar.Parse(
+                functionString,
+                this.Context);
+            if (!parseResult.Success && this.Context.IsStrictMode())
             {
-                ParseResult parseResult = this.Grammar.Parse(
-                    functionString,
-                    this.Context);
-                if (!parseResult.Success && this.Context.IsStrictMode())
-                {
-                    throw new Exception($"Error parsing '{functionString}': " + string.Join(Environment.NewLine, parseResult.Errors.Select(e => e.Description)));
-                }
-                return parseResult.Value;
+                throw new Exception($"Error parsing '{functionString}': " + string.Join(Environment.NewLine, parseResult.Errors.Select(e => e.Description)));
             }
-            catch (Exception ex)
-            {
-                throw new Exception("Error while calling function : " + functionString + " - " + ex.Message, ex);
-            }
+            return parseResult.Value;
         }
 
         private object ParseApplyOver(IList<object> listParameters)
@@ -885,7 +893,7 @@ namespace JUST
             return alias;
         }
 
-        private object ParseArgument(JToken parentToken, string argument)
+        private object ParseArgument(string argument)
         {
             object output = argument;
             var trimmedArgument = argument.Trim();
@@ -902,14 +910,14 @@ namespace JUST
 
         private object GetConditionalOutput(JToken parentToken, string[] arguments)
         {
-            var condition = ParseArgument(parentToken, arguments[0]);
+            var condition = ParseArgument(arguments[0]);
             condition = LookInTransformed(condition, arguments[0], parentToken);
-            var value = ParseArgument(parentToken, arguments[1]);
+            var value = ParseArgument(arguments[1]);
             value = LookInTransformed(value, arguments[1], parentToken);
             var equal = ComparisonHelper.Equals(condition, value, Context.EvaluationMode);
             var index = (equal) ? 2 : 3;
 
-            return ParseArgument(parentToken, arguments[index]);
+            return ParseArgument(arguments[index]);
         }
 
         private object GetFunctionOutput(string functionName, IList<object> listParameters, bool convertParameters)

@@ -82,9 +82,9 @@ namespace JUST.UnitTests
         {
             const string transformer = "{ \"length\": \"#length(#valueof($.numbers[0]))\" }";
 
-            var result = Assert.Throws<Exception>(() => new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.NumbersArray));
+            Exception ex = Assert.Throws<Exception>(() => new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.NumbersArray));
 
-            Assert.AreEqual("Error while calling function : #length(#valueof($.numbers[0])) - Argument not elegible for #length: 1", result.Message);
+            Assert.AreEqual("Error parsing '#length(#valueof($.numbers[0]))': Argument not elegible for #length: 1", ex.Message);
         }
 
         [Test]
@@ -92,10 +92,11 @@ namespace JUST.UnitTests
         {
             const string transformer = "{ \"length\": \"#length(#todecimal(1.44))\" }";
 
-            var result = Assert.Throws<Exception>(() => new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.NumbersArray));
+            Exception ex = Assert.Throws<Exception>(() => new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.NumbersArray));
 
             var decimalSeparator = System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator;
-            Assert.AreEqual($"Error while calling function : #length(#todecimal(1.44)) - Argument not elegible for #length: 1{decimalSeparator}44", result.Message);
+            Assert.AreEqual($"Error parsing '#length(#todecimal(1.44))': Argument not elegible for #length: 1{decimalSeparator}44", ex.Message);
+            
         }
     }
 }

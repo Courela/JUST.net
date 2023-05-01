@@ -204,7 +204,7 @@ namespace JUST.UnitTests.Arrays
         public void PrimitiveTypeArrayResult()
         {
             const string input = "[{ \"id\": 1, \"name\": \"Person 1\", \"gender\": \"M\" },{ \"id\": 2, \"name\": \"Person 2\", \"gender\": \"F\" },{ \"id\": 3, \"name\": \"Person 3\", \"gender\": \"M\" }]";
-            const string transformer = "{ \"result\": { \"#loop([?(@.gender=='M')])\": \"#currentvalueatpath($.name)\" } }";
+            const string transformer = "{ \"result\": { \"#loop($[?/(@.gender=='M'/)])\": \"#currentvalueatpath($.name)\" } }";
 
             using (JsonTransformer t = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }))
             {
@@ -217,7 +217,7 @@ namespace JUST.UnitTests.Arrays
         public void ObjectTypeArrayResult()
         {
             const string input = "[{ \"id\": 1, \"name\": \"Person 1\", \"gender\": \"M\" },{ \"id\": 2, \"name\": \"Person 2\", \"gender\": \"F\" },{ \"id\": 3, \"name\": \"Person 3\", \"gender\": \"M\" }]";
-            const string transformer = "{ \"result\": { \"#loop([?(@.gender=='M')])\": \"#currentvalue()\" } }";
+            const string transformer = "{ \"result\": { \"#loop($[?/(@.gender=='M'/)])\": \"#currentvalue()\" } }";
 
             using (JsonTransformer t = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }))
             {

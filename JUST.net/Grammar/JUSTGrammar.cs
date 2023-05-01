@@ -167,7 +167,7 @@ namespace JUST.Gramar
                 [ELang.Sharp] = "(?<!\\/)#",
                 [ELang.JsonPathEx] = "(?i)\\$[\\.a-z\\[\\]0-9_\\-\\?&\\*\\s:]*",
                 [ELang.Number] = "\\d+\\.?\\d*",
-                [ELang.String] = "(?i)[a-z0-9_\\-\\.@='\\[\\]&\\s]+",
+                [ELang.String] = "(?i)[a-z0-9_\\-\\.@='\\[\\]&\\s:\\|]+",
                 //[ELang.String] = "(?i)(?:[a-z0-9_\\-\\.]*(?:\\/\\(|\\/\\)|\\/,|\\/\\/)+?)|(?:(?:\\/\\(|\\/\\)|\\/,|\\/\\/)*?[a-z0-9_\\-\\.]+)",
                 [ELang.EscapeChar] = "\\/",
             });
@@ -209,8 +209,8 @@ namespace JUST.Gramar
                     new Token[] { ELang.ArrayLoop },
                     new Token[] { ELang.IfGroupEval },
                     
-                    new Token[] { ELang.Exists, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = (Invoke("valueof", true, new object[] { o[2], this._context }) != null) )},
-                    new Token[] { ELang.ExistsNotEmpty, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = Invoke(o[0], true, new object[] { o[2], this._context }) )},
+                    new Token[] { ELang.Exists, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = InvokeCheckLoop(o[0], o[2]) )},
+                    new Token[] { ELang.ExistsNotEmpty, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = InvokeCheckLoop(o[0], o[2]) )},
                     new Token[] { ELang.Eval, ELang.LParenthesis, ELang.ARGS, new Op(o => o[0] = o[2] )},
                     new Token[] { ELang.Xconcat, ELang.LParenthesis, ELang.ARG, ELang.C_ARG, ELang.RParenthesis, new Op(o => o[0] = Xconcat(o[2], o[3])  )},
                     new Token[] { ELang.Xadd, ELang.LParenthesis, ELang.ARG, ELang.C_ARG, ELang.RParenthesis, new Op(o => o[0] = o[2] + o[3] )},
@@ -386,9 +386,26 @@ namespace JUST.Gramar
             return new ParserGenerator<ELang>(new Lexer<ELang>(tokens, ELang.Ignore), rules).CompileParser();
         }
 
+        private object InvokeCheckLoop(string fn, string path)
+        {
+            object result;
+            if (this._context.CurrentArrayElement?.Last().Value != null)
+            {
+                JToken origInput = this._context.Input;
+                this._context.Input = this._context.CurrentArrayElement.Last().Value;
+                result = Invoke(fn, true, new object[] { path, this._context });
+                this._context.Input = origInput;
+            }
+            else
+            {
+                result = Invoke(fn, true, new object[] { path, this._context });
+            }
+            return result;
+        }
+
         private dynamic InvokeLoopFunction(string fn, string path, string alias)
         {
-            this._arrayAlias = !string.IsNullOrEmpty(alias) ? alias : GetAlias(this._context);
+            this._arrayAlias = GetAlias(alias, this._context);
             object[] parameters = !string.IsNullOrEmpty(path) ? 
                 new object[] { this._context.ParentArray[this._arrayAlias], this._context.CurrentArrayElement[this._arrayAlias], path, this._context } :
                 new object[] { this._context.ParentArray[this._arrayAlias], this._context.CurrentArrayElement[this._arrayAlias], this._context };
@@ -417,9 +434,9 @@ namespace JUST.Gramar
             return null;
         }
 
-        private string GetAlias(JUSTContext context)
+        private string GetAlias(string alias, JUSTContext context)
         {
-            return this._arrayAlias ?? context.CurrentArrayElement.Last().Key;
+            return !string.IsNullOrEmpty(alias) ? alias : context.CurrentArrayElement.Last().Key;
         }
 
         private JArray LoopOverAlias(string loopPath, string loopAlias, string previousAlias, JUSTContext context)

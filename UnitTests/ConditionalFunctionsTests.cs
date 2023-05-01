@@ -156,7 +156,7 @@ namespace JUST.UnitTests
 
             Exception ex = Assert.Throws<Exception>(() => new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input));
 
-            Assert.IsTrue(ex.Message.Contains("Error while calling function : wrong_val - Error parsing 'wrong_val': "));
+            Assert.AreEqual("Error parsing 'wrong_val': Syntax error: Invalid value \"wrong_val\" at position 0. Any of these tokens were expected: Sharp", ex.Message);
         }
 
         [Test, Category("IfGroup"), Category("FallbackToDefault")]

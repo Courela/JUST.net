@@ -32,9 +32,9 @@ namespace JUST.UnitTests.Arrays
             const string input = "{ \"arr\": [ \"string\", 0 ] }";
             const string transformer = "{ \"concat_all\": \"#concatall(#valueof($.arr))\" }";
 
-            var result = Assert.Throws<Exception>(() => new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input));
+            Exception ex = Assert.Throws<Exception>(() => new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input));
 
-            Assert.IsTrue(result.Message.Contains("Error while calling function : #concatall(#valueof($.arr)) - "));
+            Assert.AreEqual("Error parsing '#concatall(#valueof($.arr))': Invalid value in array to concatenate: 0", ex.Message);
         }
 
         [Test]
@@ -53,9 +53,9 @@ namespace JUST.UnitTests.Arrays
             const string input = "{ \"arr\": [ { \"str\": \"\" }, { \"str\": 0 }] }";
             const string transformer = "{ \"concat_all_at_path\": \"#concatallatpath(#valueof($.arr),$.str)\" }";
 
-            var result = Assert.Throws<Exception>(() => new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input));
+            Exception ex = Assert.Throws<Exception>(() => new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input));
 
-            Assert.IsTrue(result.Message.Contains("Error while calling function : #concatallatpath(#valueof($.arr),$.str) - "));
+            Assert.AreEqual("Error parsing '#concatallatpath(#valueof($.arr),$.str)': Invalid value in array to concatenate: 0", ex.Message);
         }
 
         [Test, Category("ArrayInput")]
