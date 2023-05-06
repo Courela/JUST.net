@@ -363,7 +363,7 @@ namespace JUST
                         {
                             RecursiveEvaluate(ref token);
                         }
-                        
+
                         Context.Input = token;
                         Context.CurrentArrayElement.Remove(key);
                         Context.CurrentArrayElement.Add(key, token);
@@ -920,68 +920,6 @@ namespace JUST
             return ParseArgument(arguments[index]);
         }
 
-        private object GetFunctionOutput(string functionName, IList<object> listParameters, bool convertParameters)
-        {
-            object output = null;
-            if (new[] { "currentvalue", "currentindex", "lastindex", "lastvalue" }.Contains(functionName))
-            {
-                var alias = ParseLoopAlias(listParameters, 1, Context.ParentArray.Last().Key);
-                output = ReflectionHelper.Caller<T>(null, "JUST.Transformer`1", functionName, new object[] { Context.ParentArray[alias], Context.CurrentArrayElement[alias] }, convertParameters, Context);
-            }
-            else if (new[] { "currentvalueatpath", "lastvalueatpath" }.Contains(functionName))
-            {
-                var alias = ParseLoopAlias(listParameters, 2, Context.ParentArray.Last().Key);
-                output = ReflectionHelper.Caller<T>(
-                    null,
-                    "JUST.Transformer`1",
-                    functionName,
-                    new[] { Context.ParentArray[alias], Context.CurrentArrayElement[alias] }.Concat(listParameters.ToArray()).ToArray(),
-                    convertParameters,
-                    Context);
-            }
-            else if (functionName == "currentproperty")
-            {
-                var alias = ParseLoopAlias(listParameters, 1, Context.ParentArray.Last().Key);
-                output = ReflectionHelper.Caller<T>(null, "JUST.Transformer`1", functionName,
-                    new object[] { Context.ParentArray[alias], Context.CurrentArrayElement[alias], Context },
-                    convertParameters, Context);
-            }
-            else if (functionName == "customfunction")
-                output = CallCustomFunction(listParameters.ToArray());
-            else if (Context?.IsRegisteredCustomFunction(functionName) ?? false)
-            {
-                var methodInfo = Context.GetCustomMethod(functionName);
-                output = ReflectionHelper.InvokeCustomMethod<T>(methodInfo, listParameters.ToArray(), convertParameters, Context);
-            }
-            else if (Regex.IsMatch(functionName, ReflectionHelper.EXTERNAL_ASSEMBLY_REGEX))
-            {
-                output = ReflectionHelper.CallExternalAssembly<T>(functionName, listParameters.ToArray(), Context);
-            }
-            else if (new[] { "xconcat", "xadd",
-                        "mathequals", "mathgreaterthan", "mathlessthan", "mathgreaterthanorequalto", "mathlessthanorequalto",
-                        "stringcontains", "stringequals"}.Contains(functionName))
-            {
-                object[] oParams = new object[1];
-                oParams[0] = listParameters.ToArray();
-                output = ReflectionHelper.Caller<T>(null, "JUST.Transformer`1", functionName, oParams, convertParameters, Context);
-            }
-            else if (functionName == "applyover")
-            {
-                output = ParseApplyOver(listParameters);
-            }
-            else
-            {
-                var input = ((JUSTContext)listParameters.Last()).Input;
-                if (Context.CurrentArrayElement != null && functionName != "valueof")
-                {
-                    ((JUSTContext)listParameters.Last()).Input = Context.CurrentArrayElement.Last().Value;
-                }
-                output = ReflectionHelper.Caller<T>(null, "JUST.Transformer`1", functionName, listParameters.ToArray(), convertParameters, Context);
-                ((JUSTContext)listParameters.ToArray().Last()).Input = input;
-            }
-            return output;
-        }
-
         private object LookInTransformed(object output, string propVal, JToken parentToken)
         {
             if (output == null && Context.IsLookInTransformed())
@@ -992,35 +930,6 @@ namespace JUST
                 Context.Input = tmpContext;
             }
             return output;
-        }
-
-        private object CallCustomFunction(object[] parameters)
-        {
-            object[] customParameters = new object[parameters.Length - 3];
-            string functionString = string.Empty;
-            string dllName = string.Empty;
-            int i = 0;
-            foreach (object parameter in parameters)
-            {
-                if (i == 0)
-                    dllName = parameter.ToString();
-                else if (i == 1)
-                    functionString = parameter.ToString();
-                else
-                if (i != (parameters.Length - 1))
-                    customParameters[i - 2] = parameter;
-
-                i++;
-            }
-
-            int index = functionString.LastIndexOf(".");
-
-            string className = functionString.Substring(0, index);
-            string functionName = functionString.Substring(index + 1, functionString.Length - index - 1);
-
-            className = className + "," + dllName;
-
-            return ReflectionHelper.Caller<T>(null, className, functionName, customParameters, true, Context);
         }
         #endregion
 
