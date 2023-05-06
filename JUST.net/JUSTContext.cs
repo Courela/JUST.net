@@ -37,7 +37,7 @@ namespace JUST
         LookInTransformed = 16
     }
 
-    public class JUSTContext
+    public class JUSTContext : IContext
     {
         private Dictionary<string, MethodInfo> _customFunctions = new Dictionary<string, MethodInfo>();
         private int _defaultDecimalPlaces = 28;
@@ -98,12 +98,21 @@ namespace JUST
             Input = JToken.Parse(inputJson);
         }
 
+        internal JUSTContext(string inputJson, JUSTContext context) : this(inputJson)
+        {
+            this.EvaluationMode = context.EvaluationMode;
+            this.EscapeChar = context.EscapeChar;
+            this.DefaultDecimalPlaces = context.DefaultDecimalPlaces;
+            this.SplitGroupChar = context.SplitGroupChar;
+            this._customFunctions = context._customFunctions;
+        }
+
         internal bool IsJoinArraysMode()
         {
             return (EvaluationMode & EvaluationMode.JoinArrays) == EvaluationMode.JoinArrays;
         }
 
-        internal bool IsStrictMode()
+        public bool IsStrictMode()
         {
             return (EvaluationMode & EvaluationMode.Strict) == EvaluationMode.Strict;
         }
@@ -163,7 +172,7 @@ namespace JUST
             return _customFunctions.ContainsKey(aliasOrName);
         }
 
-        internal T Resolve<T>(JToken token) where T : ISelectableToken
+        public T Resolve<T>(JToken token) where T: ISelectableToken
         {
             T instance = Activator.CreateInstance<T>();
             instance.Token = token;
