@@ -527,7 +527,6 @@ namespace JUST
                 if (args.Length > 2)
                 {
                     previousAlias = (string)ParseFunction(args[2].Trim(), null, parentArray, currentArrayToken, Context.Input);
-                    currentArrayToken = new Dictionary<string, JToken> { { previousAlias, Context.Input } };
                 }
                 else
                 {
@@ -536,7 +535,7 @@ namespace JUST
             }
             else
             {
-                currentArrayToken = new Dictionary<string, JToken> { { previousAlias, Context.Input } };
+                currentArrayToken = new Dictionary<string, JToken> {{ previousAlias, Context.Input }};
             }
 
             var strArrayToken = ParseArgument(null, parentArray, currentArrayToken, args[0]) as string;
@@ -966,7 +965,6 @@ namespace JUST
             if (listParameters != null && listParameters.Count >= index)
             {
                 alias = (listParameters[index - 1] as string).Trim();
-                listParameters.RemoveAt(index - 1);
             }
             else
             {
@@ -1056,7 +1054,7 @@ namespace JUST
                 }
                 else if (functionName == "applyover")
                 {
-                    output = ParseApplyOver(array, currentArrayElement, listParameters.Concat(new object[] { Context }).ToArray());
+                    output = ParseApplyOver(array, currentArrayElement, listParameters.ToArray());
                 }
                 else
                 {
