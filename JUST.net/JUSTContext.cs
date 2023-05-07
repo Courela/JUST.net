@@ -44,8 +44,6 @@ namespace JUST
         private char _escapeChar = '/'; //do not use backslash, it is already the escape char in JSON
         private char _splitGroupChar = ':';
 
-        internal JToken Input;
-
         public EvaluationMode EvaluationMode = EvaluationMode.FallbackToDefault;
 
         public JsonSerializerSettings JsonSettings { get; set; }
@@ -93,12 +91,7 @@ namespace JUST
             }
         }
 
-        internal JUSTContext(string inputJson)
-        {
-            Input = JToken.Parse(inputJson);
-        }
-
-        internal JUSTContext(string inputJson, JUSTContext context) : this(inputJson)
+        internal JUSTContext(JUSTContext context)
         {
             this.EvaluationMode = context.EvaluationMode;
             this.EscapeChar = context.EscapeChar;
