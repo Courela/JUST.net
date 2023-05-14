@@ -544,5 +544,57 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"employees\":[{\"employee_unique_id\":\"FA6FDECD-DFAD-4C6D-80E8-752643BF4C9E\"}]}", result);
         }
+
+        [Test]
+        public void Issue272()
+        {
+            const string input = "{ \"dummy\": 1 }";
+            const string transformer = "{ \"result\": \"#applyover(#returnToken(),'#valueof($.fn)')\" }";
+
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            context.RegisterCustomFunction(null, "JUST.UnitTests.Token", "ReturnJToken", "returnToken");
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("{\"result\":{\"fn\":1}}", result);
+        }
+
+        [Test]
+        public void Issue272_array()
+        {
+            const string input = "{ \"values\": [{ \"OrderNumber__c\": 123 }, { \"OrderNumber__c\": 456 }] }";
+            const string transformer = "{ \"result\": \"#applyover(#array(#valueof($.values)),'#valueof($[1].OrderNumber__c)')\" }";
+
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            context.RegisterCustomFunction(null, "JUST.UnitTests.Token", "Array", "array");
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("{\"result\":123}", result);
+        }
+
+        [Test]
+        public void Issue272_loop()
+        {
+            const string input = "{ \"values\": [{ \"OrderNumber__c\": 123 }, { \"OrderNumber__c\": 456 }] }";
+            const string transformer = "{ \"result\": \"#applyover(#array(#valueof($.values)),{ '#loop($)': { 'curr': '#currentvalue()' } })\" }";
+
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            context.RegisterCustomFunction(null, "JUST.UnitTests.Token", "Array", "array");
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("{\"result\":[{\"curr\":{\"OrderNumber__c\":123}},{\"curr\":{\"OrderNumber__c\":456}}]}", result);
+        }
+    }
+
+    public class Token
+    {
+        public Newtonsoft.Json.Linq.JToken ReturnJToken()
+        {
+            return Newtonsoft.Json.Linq.JToken.Parse("{ \"fn\": 1 }");
+        }
+
+        public Newtonsoft.Json.Linq.JToken Array(object[] values)
+        {
+            return Newtonsoft.Json.Linq.JArray.FromObject(values);
+        }
     }
 }
