@@ -15,7 +15,7 @@ namespace JUST
     {
         internal const string EXTERNAL_ASSEMBLY_REGEX = "([\\w.]+)[:]{2}([\\w.]+)[:]{0,2}([\\w.]*)";
 
-        internal static object Caller<T>(Assembly assembly, string myclass, string mymethod, object[] parameters, bool convertParameters, JUSTContext context) where T : ISelectableToken
+        internal static object Caller<T>(Assembly assembly, string myclass, string mymethod, object[] parameters, bool convertParameters, IContext context) where T : ISelectableToken
         {
             Type type = assembly?.GetType(myclass) ?? Type.GetType(myclass);
             if (type?.ContainsGenericParameters ?? false)
@@ -33,12 +33,12 @@ namespace JUST
             }
             catch (Exception ex)
             {
-                ExceptionHelper.HandleException(ex, context.EvaluationMode);
+                ExceptionHelper.HandleException(ex, context.IsStrictMode());
             }
             return GetDefaultValue(methodInfo.ReturnType);
         }
 
-        internal static object InvokeCustomMethod<T>(MethodInfo methodInfo, object[] parameters, bool convertParameters, JUSTContext context) where T : ISelectableToken
+        internal static object InvokeCustomMethod<T>(MethodInfo methodInfo, object[] parameters, bool convertParameters, IContext context) where T : ISelectableToken
         {
             var instance = !methodInfo.IsStatic ? Activator.CreateInstance(methodInfo.DeclaringType) : null;
 
@@ -60,13 +60,13 @@ namespace JUST
             }
         }
 
-        internal static object[] ConvertParameters(ParameterInfo[] parameterInfos, object[] parameters, JUSTContext context)
+        internal static object[] ConvertParameters(ParameterInfo[] parameterInfos, object[] parameters, IContext context)
         {
             var typedParameters = new List<object>();
             for (int i = 0; i < parameterInfos.Length; i++)
             {
                 var pType = parameterInfos[i].ParameterType;
-                typedParameters.Add(GetTypedValue(pType, parameters[i], context.EvaluationMode));
+                typedParameters.Add(GetTypedValue(pType, parameters[i], context.IsStrictMode()));
             }
             return typedParameters.ToArray();
         }
@@ -202,12 +202,12 @@ namespace JUST
             return result;
         }
 
-        internal static object GetTypedValue(JTokenType jType, object val, EvaluationMode mode)
+        internal static object GetTypedValue(JTokenType jType, object val, bool IsStrictMode)
         {
-            return GetTypedValue(GetType(jType), val, mode);
+            return GetTypedValue(GetType(jType), val, IsStrictMode);
         }
 
-        internal static object GetTypedValue(Type pType, object val, EvaluationMode mode)
+        internal static object GetTypedValue(Type pType, object val, bool IsStrictMode)
         {
             object typedValue = val;
             var converter = TypeDescriptor.GetConverter(pType);
@@ -255,7 +255,7 @@ namespace JUST
             }
             catch (Exception ex)
             {
-                ExceptionHelper.HandleException(ex, mode);
+                ExceptionHelper.HandleException(ex, IsStrictMode);
                 typedValue = GetDefaultValue(pType);
             }
             return typedValue;

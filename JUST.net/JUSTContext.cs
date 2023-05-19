@@ -7,15 +7,13 @@ using System.Reflection;
 
 namespace JUST
 {
-    public class JUSTContext
+    public class JUSTContext : IContext
     {
         private Dictionary<string, MethodInfo> _customFunctions = new Dictionary<string, MethodInfo>();
         private int _defaultDecimalPlaces = 28;
         private char _escapeChar = '/'; //do not use backslash, it is already the escape char in JSON
         private char _splitGroupChar = ':';
         private bool _useGrammar;
-
-        public JToken Input;
 
         public EvaluationMode EvaluationMode = EvaluationMode.FallbackToDefault;
 
@@ -81,9 +79,13 @@ namespace JUST
             }
         }
 
-        internal JUSTContext(string inputJson)
+        internal JUSTContext(JUSTContext context)
         {
-            Input = JToken.Parse(inputJson);
+            this.EvaluationMode = context.EvaluationMode;
+            this.EscapeChar = context.EscapeChar;
+            this.DefaultDecimalPlaces = context.DefaultDecimalPlaces;
+            this.SplitGroupChar = context.SplitGroupChar;
+            this._customFunctions = context._customFunctions;
         }
 
         internal bool IsJoinArraysMode()
@@ -91,7 +93,7 @@ namespace JUST
             return (EvaluationMode & EvaluationMode.JoinArrays) == EvaluationMode.JoinArrays;
         }
 
-        internal bool IsStrictMode()
+        public bool IsStrictMode()
         {
             return (EvaluationMode & EvaluationMode.Strict) == EvaluationMode.Strict;
         }
@@ -151,15 +153,11 @@ namespace JUST
             return _customFunctions.ContainsKey(aliasOrName);
         }
 
-        internal T Resolve<T>(JToken token) where T : ISelectableToken
+        public T Resolve<T>(JToken token) where T: ISelectableToken
         {
             T instance = Activator.CreateInstance<T>();
             instance.Token = token;
             return instance;
         }
-
-        public IDictionary<string, JArray> ParentArray;
-        public IDictionary<string, JToken> CurrentArrayElement;
-        public int LoopCounter;
     }
 }
