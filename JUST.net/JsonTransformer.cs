@@ -244,7 +244,7 @@ namespace JUST
                     ConditionalGroupOperation(property.Name, arguments, parentArray, currentArrayElement, helper, childToken, input);
                     break;
                 case "loop":
-                    LoopOperation(property.Name, arguments, parentArray, currentArrayElement, helper, childToken, input);
+                    LoopOperation(property.Name, parentArray, currentArrayElement, helper, childToken, input);
                     helper.isLoop = true;
                     break;
                 case "eval":
@@ -923,16 +923,101 @@ namespace JUST
 
         #region ParseFunction
 
-        private object ParseFunction(string functionString, JToken parentToken, IDictionary<string, JArray> array, IDictionary<string, JToken> currentArrayElement, JToken input)
+        private object ParseFunction(string functionString, JToken parentToken, IDictionary<string, JArray> parentArray, IDictionary<string, JToken> currentArrayElement, JToken input)
         {
+            Func<string, bool, object[], IContext, object> invokeFunc = (fn, convertParameters, parameters, context) =>
+            {
+                return ReflectionHelper.Caller<T>(null, "JUST.Transformer`1", fn, parameters.Concat(new object[] { input, context }).ToArray(), convertParameters, this.Context);
+            };
+
+            Func<string, string, IContext, object> invokeCheckLoopFunc = (fn, path, context) =>
+            {
+                object result;
+                JToken loopInput = currentArrayElement?.Last().Value != null ?
+                    currentArrayElement.Last().Value :
+                    input;
+                result = Invoke(fn, true, new object[] { loopInput, path, context });
+                return result;
+            };
+
+            Func<string, string, string, IContext, object> invokeLoopFunctionFunc = (fn, path, alias, context) =>
+            {
+                string arrayAlias = GetAlias(alias, currentArrayElement);
+                object[] parameters = !string.IsNullOrEmpty(path) ? 
+                    new object[] { parentArray[arrayAlias], currentArrayElement[arrayAlias], path, context } :
+                    new object[] { parentArray[arrayAlias], currentArrayElement[arrayAlias], context };
+                return Invoke(fn, true, parameters);
+            };
+
+            Func<string, string, string, IContext, JArray> loopOverAliasFunc = (loopPath, loopAlias, previousAlias, context) =>
+            {
+                previousAlias = previousAlias != null ? previousAlias : currentArrayElement.Last().Key;
+                JToken input = currentArrayElement[previousAlias];
+                object loopToken = Invoke("valueof", true, new object[] { loopPath, context });
+                JArray loopArray = GetLoopArray(loopToken);
+                KeyValuePair<string, JArray> k = new KeyValuePair<string, JArray>(loopAlias ?? $"loop{++this._loopCounter}", loopArray);
+
+                if (parentArray == null)
+                {
+                    parentArray = new Dictionary<string, JArray>();
+                }
+                parentArray.Add(k);
+
+                return loopArray;
+            };
+
+            Func<dynamic, dynamic, IContext, dynamic> replaceFunc = (arg1, arg2, context) =>
+            {
+                object arg1Val = Invoke("valueof", true, new object[] { input, arg1, context });
+                (arg1Val as JToken).Replace(arg2 as JToken);
+                return input;
+            };
+
+            Func<dynamic, IContext, dynamic> deleteFunc = (arg1, context) =>
+            {
+                JToken toRemove = input.SelectToken(arg1);
+                toRemove.Ancestors().First().Remove();
+                return input;
+            };
+
             ParseResult parseResult = this.Grammar.Parse(
                 functionString,
+                invokeFunc,
+                invokeCheckLoopFunc,
+                invokeLoopFunctionFunc,
+                loopOverAliasFunc,
+                replaceFunc,
+                deleteFunc,
                 this.Context);
             if (!parseResult.Success && this.Context.IsStrictMode())
             {
                 throw new Exception($"Error parsing '{functionString}': " + string.Join(Environment.NewLine, parseResult.Errors.Select(e => e.Description)));
             }
             return parseResult.Value;
+        }
+
+        private string GetAlias(string alias, IDictionary<string, JToken> currentArrayElement)
+        {
+            return !string.IsNullOrEmpty(alias) ? alias : currentArrayElement.Last().Key;
+        }
+
+        private JArray GetLoopArray(object loopToken)
+        {
+            JArray result;
+            if (loopToken is Array)
+            {
+                result = JArray.FromObject(loopToken);
+            }
+            else if (loopToken is JArray)
+            {
+                result = loopToken as JArray;
+            }
+            else
+            {
+                result = new JArray();
+                result.Add(loopToken);
+            }
+            return result;
         }
 
         private object ParseApplyOver(IDictionary<string, JArray> array, IDictionary<string, JToken> currentArrayElement, object[] parameters, JToken input)
@@ -1083,6 +1168,25 @@ namespace JUST
         public void Dispose()
         {
             this.Grammar.Dispose();
+        }
+
+        private object InvokeCheckLoop(string fn, string path, IDictionary<string, JToken> currentArrayElement, JToken input)
+        {
+            object result;
+            if (currentArrayElement?.Last().Value != null)
+            {
+                result = Invoke(fn, true, new object[] { path, currentArrayElement.Last().Value, this.Context });
+            }
+            else
+            {
+                result = Invoke(fn, true, new object[] { path, input, this.Context });
+            }
+            return result;
+        }
+
+        private object Invoke(string fn, bool convertParameters, object[] parameters)
+        {
+            return ReflectionHelper.Caller<T>(null, "JUST.Transformer`1", fn, parameters, convertParameters, this.Context);
         }
     }
 }

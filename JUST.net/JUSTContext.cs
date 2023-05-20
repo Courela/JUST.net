@@ -139,7 +139,7 @@ namespace JUST
             _customFunctions.Clear();
         }
 
-        internal MethodInfo GetCustomMethod(string key)
+        public MethodInfo GetCustomMethod(string key)
         {
             if (!_customFunctions.TryGetValue(key, out var result))
             {
@@ -148,7 +148,7 @@ namespace JUST
             return result;
         }
 
-        internal bool IsRegisteredCustomFunction(string aliasOrName)
+        public bool IsRegisteredCustomFunction(string aliasOrName)
         {
             return _customFunctions.ContainsKey(aliasOrName);
         }

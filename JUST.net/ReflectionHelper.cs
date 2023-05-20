@@ -11,11 +11,11 @@ using System.Text.RegularExpressions;
 
 namespace JUST
 {
-    internal static class ReflectionHelper
+    public static class ReflectionHelper
     {
         internal const string EXTERNAL_ASSEMBLY_REGEX = "([\\w.]+)[:]{2}([\\w.]+)[:]{0,2}([\\w.]*)";
 
-        internal static object Caller<T>(Assembly assembly, string myclass, string mymethod, object[] parameters, bool convertParameters, IContext context) where T : ISelectableToken
+        public static object Caller<T>(Assembly assembly, string myclass, string mymethod, object[] parameters, bool convertParameters, IContext context) where T : ISelectableToken
         {
             Type type = assembly?.GetType(myclass) ?? Type.GetType(myclass);
             if (type?.ContainsGenericParameters ?? false)
