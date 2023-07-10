@@ -234,7 +234,7 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"Result\":{},\"Other\":\"property\"}", result);
         }
-
+        
         [Test, Category("IfCondition")]
         public void ConstantEmptyArray()
         {
@@ -244,6 +244,17 @@ namespace JUST.UnitTests
             var result = new JsonTransformer().Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":[]}", result);
+        }
+
+        [Test]
+        public void ConditionalGroupOnArrayItemWithLoopInside()
+        {
+            const string input = "{ \"additional_content\": [{ \"Cards_feed\": { \"cards_feed\": [ \"2\"] } }] }";
+            const string transformer = "{ \"content\": [ { \"aaa\": \"bbb\" }, { \"#ifgroup(#exists($.additional_content[*].Cards_feed))\": { \"#loop($.additional_content[*].Cards_feed.cards_feed)\": { \"xxx\": \"yyy\" } } } ] }";
+
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{\"content\":[{\"aaa\":\"bbb\"},[{\"xxx\":\"yyy\"}]]}", result);
         }
     }
 }
