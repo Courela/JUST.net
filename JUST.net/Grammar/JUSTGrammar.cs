@@ -20,10 +20,11 @@ namespace JUST.Gramar
         private Func<string, string, string, IContext, JArray> _loopOverAliasFunc;
         private Func<dynamic, dynamic, IContext, dynamic> _replaceFunc;
         private Func<dynamic, IContext, dynamic> _deleteFunc;
+        private Func<string> _escapeCharFunc;
 
-        private Grammar()
+        private Grammar(char? escapeChar)
         {
-            _parser = GetParser();
+            _parser = GetParser(escapeChar);
         }
 
         public ParseResult Parse(
@@ -46,19 +47,16 @@ namespace JUST.Gramar
             return _parser.Parse(expression);
         }
 
-        public static Grammar<TSelectable> Instance
+        public static Grammar<TSelectable> GetInstance(char? escapeChar = null)
         {
-            get
+            if (_instance == null)
             {
-                if (_instance == null)
+                lock(_lock)
                 {
-                    lock(_lock)
-                    {
-                        _instance = new Grammar<TSelectable>();
-                    }
+                    _instance = new Grammar<TSelectable>(escapeChar);
                 }
-                return _instance;
             }
+            return _instance;
         }
 
         protected enum ELang
@@ -108,7 +106,7 @@ namespace JUST.Gramar
             ConstantSharp,ConstantComma,StringEmpty,ArrayEmpty
         }
         
-        private Parser<ELang> GetParser()
+        private Parser<ELang> GetParser(char? escapeChar)
         {
             var tokens = new LexerDefinition<ELang>(new Dictionary<ELang, TokenRegex>
             {
@@ -179,15 +177,15 @@ namespace JUST.Gramar
                 [ELang.ArrayEmpty] = "arrayempty",
                 
                 [ELang.Ignore] = "[ \\n]+",
-                [ELang.LParenthesis] = "(?<!\\/)\\(",
-                [ELang.RParenthesis] = "(?<!\\/)\\)",
-                [ELang.Comma] = "(?<!\\/),",
-                [ELang.Sharp] = "(?<!\\/)#",
+                [ELang.LParenthesis] = $"(?<!{EscapeCharExpression(escapeChar)})\\(",
+                [ELang.RParenthesis] = $"(?<!{EscapeCharExpression(escapeChar)})\\)",
+                [ELang.Comma] = $"(?<!{EscapeCharExpression(escapeChar)}),",
+                [ELang.Sharp] = $"(?<!{EscapeCharExpression(escapeChar)})#",
                 [ELang.JsonPathEx] = "(?i)\\$[\\.a-z\\[\\]0-9_\\-\\?&\\*\\s:]*",
                 [ELang.Number] = "\\d+\\.?\\d*",
-                [ELang.String] = "(?i)[a-z0-9_\\-\\.@='\\[\\]&\\s:\\|]+",
+                [ELang.String] = "(?i)[a-z0-9_\\-\\.@='\\[\\]&\\s:\\|#]+",
                 //[ELang.String] = "(?i)(?:[a-z0-9_\\-\\.]*(?:\\/\\(|\\/\\)|\\/,|\\/\\/)+?)|(?:(?:\\/\\(|\\/\\)|\\/,|\\/\\/)*?[a-z0-9_\\-\\.]+)",
-                [ELang.EscapeChar] = "\\/",
+                [ELang.EscapeChar] = EscapeCharExpression(escapeChar),
             });
         
             // EXPR -> Sharp FUNC
@@ -404,6 +402,12 @@ namespace JUST.Gramar
             return new ParserGenerator<ELang>(new Lexer<ELang>(tokens, ELang.Ignore), rules).CompileParser();
         }
 
+        private TokenRegex EscapeCharExpression(char? escapeChar)
+        {
+            char c = escapeChar ?? '/';
+            return $"\\{c}";
+        }
+
         // private object InvokeCheckLoop(string fn, string path, IDictionary<string, JToken> currentArrayElement, JToken input)
         // {
         //     object result;
@@ -467,7 +471,10 @@ namespace JUST.Gramar
             List<object> l = new List<object>();
             l.Add(assemblyName);
             l.Add(method);
-            l.AddRange(args);
+            if (args != null)
+            {
+                l.AddRange(args);
+            }
             return CallCustomFunction(l.ToArray(), context);
         }
 

@@ -117,13 +117,12 @@ namespace JUST.UnitTests
             Assert.AreEqual("{\"someNewNode\":\"Need this value\"}", result);
         }
 
-        [Ignore("Escape char hardcoded")]
         [TestCase('§')]
         [TestCase('&')]
         [TestCase('|')]
         public void OtherEscapeChar(char escapeChar)
         {
-            string args = $"#arg1,#xconcat({escapeChar}#notfunc{escapeChar}({escapeChar}), #constant_comma(),#xconcat({escapeChar},arg2.3.1,#constant_hash(),'arg2.3.3),{escapeChar},,#add(3,2))";
+            string args = $"{escapeChar}#arg1,#xconcat({escapeChar}#notfunc{escapeChar}({escapeChar}), #constant_comma(),#xconcat({escapeChar},arg2.3.1,#constant_hash(),'arg2.3.3),{escapeChar},,#add(3,2))";
             string input = "{ \"test\": \"" + args + "\" }";
             string transformer = "{ \"result\": \"#xconcat(" + args + ",#constant_hash())\" }";
             var context = new JUSTContext { EscapeChar = escapeChar, EvaluationMode = EvaluationMode.Strict };
