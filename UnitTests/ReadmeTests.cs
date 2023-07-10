@@ -583,6 +583,18 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"result\":[{\"curr\":{\"OrderNumber__c\":123}},{\"curr\":{\"OrderNumber__c\":456}}]}", result);
         }
+
+        [Test]
+        public void Issue280()
+        {
+            const string input = "{ \"Path\": \"Type1\", \"Children\": [ { \"Path\": \"Type1~Cat1\", \"Items\": [ { \"Id\": \"66717101\" }, { \"Id\": \"66717102\" } ], \"Children\": [ { \"Path\": \"Type1~Cat1~Sku1\", \"Items\": [ { \"Id\": \"66717101\" } ], \"Children\": [ { \"Path\": \"Type1~Cat1~Sku2~Model1\", \"Items\": [ { \"Id\": \"66717102\" } ] }, { \"Path\": \"Type1~Cat1~Sku1~Model1\", \"Items\": [ { \"Id\": \"66717101\" }, { \"Id\": \"66717102\" } ] } ] }, { \"Path\": \"Type1~Cat1~Sku2\", \"Items\": [ { \"Id\": \"66717101\" } ], \"Children\": [ { \"Path\": \"Type1~Cat1~Sku2~Model1\", \"Items\": [ { \"Id\": \"66717722\" } ] } ] } ] }, { \"Path\": \"Type1-Cat2\", \"Children\": [] }, { \"Path\": \"Type1-Cat3\", \"Children\": [] } ], \"Items\": [ { \"Id\": \"66717766\" }, { \"Id\": \"6828147\" } ]}";
+            const string transformer = "[ \"#valueof($..Id)\", \"#valueof($..Path)\" ]";
+
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("", result);
+        }
     }
 
     public class Token
