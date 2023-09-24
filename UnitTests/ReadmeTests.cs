@@ -267,5 +267,23 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"scalar\":true,\"object\":{\"result\":true},\"select_token\":{\"result\":true},\"loop\":[{\"result\":true},{\"result\":false}]}", result);
         }
+
+        [Test]
+        public void Issue280()
+        {
+            const string input = "{ \"Path\": \"Type1\", \"Children\": [ { \"Path\": \"Type1~Cat1\", \"Items\": [ { \"Id\": \"66717101\" }, { \"Id\": \"66717102\" } ], \"Children\": [ { \"Path\": \"Type1~Cat1~Sku1\", \"Items\": [ { \"Id\": \"66717101\" } ], \"Children\": [ { \"Path\": \"Type1~Cat1~Sku2~Model1\", \"Items\": [ { \"Id\": \"66717102\" } ] }, { \"Path\": \"Type1~Cat1~Sku1~Model1\", \"Items\": [ { \"Id\": \"66717101\" }, { \"Id\": \"66717102\" } ] } ] }, { \"Path\": \"Type1~Cat1~Sku2\", \"Items\": [ { \"Id\": \"66717101\" } ], \"Children\": [ { \"Path\": \"Type1~Cat1~Sku2~Model1\", \"Items\": [ { \"Id\": \"66717722\" } ] } ] } ] }, { \"Path\": \"Type1-Cat2\", \"Children\": [] }, { \"Path\": \"Type1-Cat3\", \"Children\": [] } ], \"Items\": [ { \"Id\": \"66717766\" }, { \"Id\": \"6828147\" } ]}";
+            const string transformer = 
+                "{ \"result\": { \"#transform($)\": [ " +
+                    "{ \"Children\": \"#valueof($..Children)\", \"Items\": \"#valueof($.Items)\", \"Path\": \"#valueof($.Path)\" } " +
+                    ",{ \"Items\": \"#valueof($.Items)\", \"Path\": \"#valueof($.Path)\", \"intermediate\": { \"#loop($.Children)\": { \"Items\": \"#currentvalueatpath($[0].Items)\", \"Path\": \"#currentvalueatpath($[0].Path)\" } } } " +
+                    ",\"#valueof($.intermediate)\"" +
+                    //",{ \"intermediate\": { \"#loop($.Ids)\": { \"Id\": \"#currentvalue()\", \"Path\": \"#ifcondition(#valueof(#xconcat($..Children.Items[?/(@.Id==',#currentvalue(),'/)].Id)),#currentvalue(),#valueof($.Children.Path),#stringempty())\" } } }" +
+                "]}}";
+
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("", result);
+        }
     }
 }
