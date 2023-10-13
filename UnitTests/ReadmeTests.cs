@@ -595,6 +595,35 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("", result);
         }
+
+        [Test]
+        public void Issue279()
+        {
+            const string input = "{ \"open\": \"Open\", \"close\": \"Close\", \"menu\": { \"popup\": { \"menuitem\": [ { \"value\": \"Open\", \"onclick\": \"OpenDoc()\" }, { \"value\": \"Close\", \"onclick\": \"CloseDoc()\" } ], \"submenuitem\": \"CloseSession()\" } } }";
+            const string transformer = "{ \"result\": { \"Open\": \"#valueof(#xconcat($.menu.popup.menuitem[?/(@.value == ',#valueof($.open),'/)].onclick))\", \"Close\": \"#valueof(#xconcat($.menu.popup.menuitem[?/(@.value == ',#valueof($.close),'/)].onclick))\" } }";
+
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("", result);
+        }
+
+        [Test]
+        public void Issue282()
+        {
+            const string input = "{ \"Questions\": { \"Q1\": { \"Choice1\": \"option 1\", \"Choice2\": \"option 2\" }, \"Q2\": { \"Choice1\": \"option 3\", \"Choice2\": \"option 4\" } }}";
+            //const string transformer = "{ \"result\": { \"#loop($.Questions)\": { \"#eval(#xconcat(Q,#currentindex()))\": [ \"#currentvalueatpath(#xconcat($.,#currentproperty()))\" ] } } }";
+            const string transformer = "{ \"Questions\": \"#applyover({ 'result': { '#loop($.Questions)': { '#eval(#xconcat(Q,#currentindex()))': [ '#currentvalueatpath(#xconcat($.,#currentproperty()))' ] } } },'#xconcat(#valueof($.result.Q0),#valueof($.result.Q1))')\" }";
+
+             JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            // var r1 = new JsonTransformer(context).Transform(transformer, input);
+
+            // const string t2 = "{ \"Questions\": \"#xconcat(#valueof($.result.Q0),#valueof($.result.Q1))\" }";
+            //var result = new JsonTransformer(context).Transform(t2, r1);
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("", result);
+        }
     }
 
     public class Token
