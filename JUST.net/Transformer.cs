@@ -9,7 +9,7 @@ namespace JUST
 {
     public abstract class Transformer
     {
-        protected int _loopCounter = 0;
+        protected int _levelCounter = 0;
 
         protected readonly JUSTContext Context;
 
@@ -191,9 +191,11 @@ namespace JUST
             {
                 return stringRef.Substring(startIndex, length);
             }
-            catch (Exception ex)
+            catch
             {
-                ExceptionHelper.HandleException(ex, context.IsStrictMode());
+                if (context.IsStrictMode()) {
+                    throw;
+                }
             }
             return null;
         }
@@ -235,7 +237,7 @@ namespace JUST
                 {
                     if (context.IsStrictMode() && token.Type != JTokenType.String)
                     {
-                        throw new Exception($"Invalid value in array to concatenate: {token.ToString()}");
+                        throw new Exception($"Invalid value in array to concatenate: {token}");
                     }
                     result += token.ToString();
                 }
@@ -744,7 +746,7 @@ namespace JUST
             }
             else if (val is IEnumerable enumerable)
             {
-                var enumerator = enumerable.GetEnumerator();
+                IEnumerator enumerator = enumerable.GetEnumerator();
                 while (enumerator.MoveNext())
                 {
                     result++;

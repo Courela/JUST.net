@@ -7,11 +7,14 @@ internal class TransformHelper
     internal IDictionary<string, JToken> tokensToReplace;
     internal IList<JToken> tokensToDelete;
     internal IList<string> loopProperties;
+    internal IList<string> scopeProperties;
     internal IList<string> condProps;
     internal JArray arrayToForm;
     internal JObject dictToForm;
+    internal JObject scopeToForm;
     internal IList<JToken> tokenToForm;
     internal IList<JToken> tokensToAdd;
     internal bool isLoop;
     internal bool isBulk;
+    internal bool isScope;
 }
