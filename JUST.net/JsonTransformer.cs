@@ -542,12 +542,13 @@ namespace JUST
             _levelCounter++;
             string alias = args.Length > 1 ? (string)ParseFunction(args[1].Trim(), null, state, input) : $"loop{_levelCounter}";
 
-            if (state.CurrentArrayToken?.Any() ?? false)
+            if (args.Length > 2)
             {
                 previousAlias = (string)ParseFunction(args[2].Trim(), null, state, input);
                 state.CurrentArrayToken = new Dictionary<LevelKey, JToken> { { new LevelKey { Level =_levelCounter, Key = previousAlias }, input } };
             }
             else
+                //if (state.CurrentArrayToken?.Any() ?? false)
             {
                 previousAlias = state.GetHigherAlias();
             }
@@ -874,7 +875,7 @@ namespace JUST
                 object itemToAdd = arrEl.Value<JToken>();
                 if (arrEl.Type == JTokenType.String && arrEl.ToString().Trim().StartsWith("#"))
                 {
-                    itemToAdd = ParseFunction(null, arrEl.ToString(), state, input);
+                    itemToAdd = ParseFunction(arrEl.ToString(), null, state, input);
                 }
                 result.Add(itemToAdd);
             }
@@ -1122,8 +1123,32 @@ namespace JUST
                 }
                 else
                 {
-                    var inputToken = state.CurrentArrayToken != null && functionName != "valueof" ?
-                        state.CurrentArrayToken.Last().Value :
+                    // JToken inputToken;
+                    // if (functionName != "valueof")
+                    // {
+                    //     if (listParameters.Count > 1)
+                    //     {
+                    //         inputToken = state.GetAliasToken(listParameters[1].ToString());
+                    //         listParameters.Remove(listParameters.ElementAt(listParameters.Count - 2));
+                    //     }
+                    //     else
+                    //     {
+                    //         inputToken = state.GetAliasToken(state.GetHigherAlias());
+                    //     }
+                    // }
+                    // else
+                    // {
+                    //     if (listParameters.Count > 1)
+                    //     {
+                    //         inputToken = state.CurrentScopeToken.Single(s => s.Key.Key == listParameters[1].ToString()).Value;
+                    //     }
+                    //     else
+                    //     {
+                    //         inputToken = state.CurrentScopeToken.Last().Value;
+                    //     }
+                    // }
+                    var inputToken = state.CurrentArrayToken.Count > 1 && functionName != "valueof" ?
+                        state.GetHigherAlias() :
                         input;
 
                     output = ReflectionHelper.Caller<T>(
