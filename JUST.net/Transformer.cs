@@ -9,7 +9,7 @@ namespace JUST
 {
     public abstract class Transformer
     {
-        protected int _loopCounter = 0;
+        protected int _levelCounter = 0;
 
         protected readonly JUSTContext Context;
 
@@ -93,21 +93,21 @@ namespace JUST
 
         public static object valueof(string path, JUSTContext context)
         {
-            var selector = context.Resolve<T>(context.Input);
+            T selector = context.Resolve<T>(context.Input);
             JToken selectedToken = selector.Select(path);
             return GetValue(selectedToken);
         }
 
         public static bool exists(string path, JUSTContext context)
         {
-            var selector = context.Resolve<T>(context.Input);
+            T selector = context.Resolve<T>(context.Input);
             JToken selectedToken = selector.Select(path);
             return selectedToken != null;
         }
 
         public static bool existsandnotempty(string path, JUSTContext context)
         {
-            var selector = context.Resolve<T>(context.Input);
+            T selector = context.Resolve<T>(context.Input);
             JToken selectedToken = selector.Select(path);
             return selectedToken != null && (
                 (selectedToken.Type == JTokenType.String && selectedToken.ToString().Trim() != string.Empty) ||
@@ -187,9 +187,11 @@ namespace JUST
             {
                 return stringRef.Substring(startIndex, length);
             }
-            catch (Exception ex)
+            catch
             {
-                ExceptionHelper.HandleException(ex, context.EvaluationMode);
+                if (context.IsStrictMode()) {
+                    throw;
+                }
             }
             return null;
         }
@@ -231,7 +233,7 @@ namespace JUST
                 {
                     if (context.IsStrictMode() && token.Type != JTokenType.String)
                     {
-                        throw new Exception($"Invalid value in array to concatenate: {token.ToString()}");
+                        throw new Exception($"Invalid value in array to concatenate: {token}");
                     }
                     result += token.ToString();
                 }
@@ -255,7 +257,7 @@ namespace JUST
                     {
                         throw new Exception($"Invalid value in array to concatenate: {selectedToken.ToString()}");
                     }
-                    result += selectedToken.ToString();
+                    result += selectedToken?.ToString();
                 }
             }
 
@@ -321,9 +323,11 @@ namespace JUST
             {
                 foreach (JToken token in parsedArray.Children())
                 {
-                    var selector = context.Resolve<T>(token);
-                    JToken selectedToken = selector.Select(path);
-                    result += Convert.ToDecimal(selectedToken.ToString());
+                    T selector = context.Resolve<T>(token);
+                    if (selector.Select(path) is JToken selectedToken)
+                    {
+                        result += Convert.ToDecimal(selectedToken.ToString());
+                    }
                 }
             }
 
@@ -366,9 +370,11 @@ namespace JUST
             {
                 foreach (JToken token in parsedArray.Children())
                 {
-                    var selector = context.Resolve<T>(token);
-                    JToken selectedToken = selector.Select(path);
-                    result += Convert.ToDecimal(selectedToken.ToString());
+                    T selector = context.Resolve<T>(token);
+                    if (selector.Select(path) is JToken selectedToken)
+                    {
+                        result += Convert.ToDecimal(selectedToken.ToString());
+                    }
                 }
             }
 
@@ -404,7 +410,7 @@ namespace JUST
 
         private static decimal Max(decimal d1, JToken token)
         {
-            decimal thisValue = Convert.ToDecimal(token.ToString());
+            decimal thisValue = Convert.ToDecimal(token?.ToString());
             return Math.Max(d1, thisValue);
         }
 
@@ -415,7 +421,7 @@ namespace JUST
             {
                 foreach (JToken token in parsedArray.Children())
                 {
-                    var selector = context.Resolve<T>(token);
+                    T selector = context.Resolve<T>(token);
                     JToken selectedToken = selector.Select(path);
                     result = Max(result, selectedToken);
                 }
@@ -454,20 +460,22 @@ namespace JUST
 
         public static object minatpath(JArray parsedArray, string path, JUSTContext context)
         {
-            decimal result = decimal.MaxValue;
+            decimal? result = null;
 
             if (parsedArray != null)
             {
                 foreach (JToken token in parsedArray.Children())
                 {
-                    var selector = context.Resolve<T>(token);
-                    JToken selectedToken = selector.Select(path);
-                    decimal thisValue = Convert.ToDecimal(selectedToken.ToString());
-                    result = Math.Min(result, thisValue);
+                    T selector = context.Resolve<T>(token);
+                    if (selector.Select(path) is JToken selectedToken)
+                    {
+                        decimal thisValue = Convert.ToDecimal(selectedToken.ToString());
+                        result = Math.Min(result ?? decimal.MaxValue, thisValue);
+                    }
                 }
             }
 
-            return TypedNumber(result);
+            return TypedNumber(result ?? decimal.MaxValue);
         }
 
         public static int arraylength(string array, JUSTContext context)
@@ -518,7 +526,7 @@ namespace JUST
 
         public static object lastvalueatpath(JArray array, JToken currentElement, string path, JUSTContext context)
         {
-            var selector = context.Resolve<T>(array.Last);
+            T selector = context.Resolve<T>(array.Last);
             JToken selectedToken = selector.Select(path);
             return GetValue(selectedToken);
         }
@@ -572,7 +580,7 @@ namespace JUST
         public static JArray grouparrayby(string path, string groupingElement, string groupedElement, JUSTContext context)
         {
             JArray result;
-            var selector = context.Resolve<T>(context.Input);
+            T selector = context.Resolve<T>(context.Input);
             JArray arr = (JArray)selector.Select(path);
             if (!groupingElement.Contains(context.SplitGroupChar))
             {
@@ -748,7 +756,7 @@ namespace JUST
             }
             else if (val is IEnumerable enumerable)
             {
-                var enumerator = enumerable.GetEnumerator();
+                IEnumerator enumerator = enumerable.GetEnumerator();
                 while (enumerator.MoveNext())
                 {
                     result++;
@@ -779,17 +787,17 @@ namespace JUST
 
         public static bool isboolean(object val, JUSTContext context)
         {
-            return val.GetType() == typeof(bool);
+            return val != null ? val.GetType() == typeof(bool) : false;
         }
 
         public static bool isstring(object val, JUSTContext context)
         {
-            return val.GetType() == typeof(string);
+            return val != null ? val.GetType() == typeof(string) : false;
         }
 
         public static bool isarray(object val, JUSTContext context)
         {
-            return val.GetType().IsArray;
+            return val != null ? val.GetType().IsArray : false;
         }
 
         public static object ifgroup(bool isToInclude, object val)

@@ -252,7 +252,7 @@ namespace JUST.UnitTests.Arrays
         {
             const string transformer = "{ \"hello\": { \"#loop($.NestedLoop.Organization.Employee, employee)\": { \"Details\": { \"#loop($.Details, details)\": { \"CurrentCountry\": \"#currentvalueatpath($.Country, details)\", \"OuterName\": \"#currentvalueatpath($.Name, employee)\", \"FirstLevel\": { \"#loop($.Roles, roles)\": { \"Employee\": \"#currentvalue(employee)\", \"Job\": \"#currentvalueatpath($.Job, roles)\" } } } } } } }";
 
-            var result = new JsonTransformer().Transform(transformer, ExampleInputs.NestedArrays);
+            var result = new JsonTransformer(new JUSTContext() { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.NestedArrays);
 
             Assert.AreEqual("{\"hello\":[{\"Details\":[{\"CurrentCountry\":\"Iceland\",\"OuterName\":\"E2\",\"FirstLevel\":[{\"Employee\":{\"Name\":\"E2\",\"Details\":[{\"Country\":\"Iceland\",\"Age\":\"30\",\"Name\":\"Sven\",\"Language\":\"Icelandic\",\"Roles\":[{\"Job\":\"Janitor\",\"Salary\":100},{\"Job\":\"Security\",\"Salary\":200}]}]},\"Job\":\"Janitor\"},{\"Employee\":{\"Name\":\"E2\",\"Details\":[{\"Country\":\"Iceland\",\"Age\":\"30\",\"Name\":\"Sven\",\"Language\":\"Icelandic\",\"Roles\":[{\"Job\":\"Janitor\",\"Salary\":100},{\"Job\":\"Security\",\"Salary\":200}]}]},\"Job\":\"Security\"}]}]},{\"Details\":[{\"CurrentCountry\":\"Denmark\",\"OuterName\":\"E1\",\"FirstLevel\":[{\"Employee\":{\"Name\":\"E1\",\"Details\":[{\"Country\":\"Denmark\",\"Age\":\"30\",\"Name\":\"Svein\",\"Language\":\"Danish\",\"Roles\":[{\"Job\":\"Manager\",\"Salary\":300},{\"Job\":\"Developer\",\"Salary\":400}]}]},\"Job\":\"Manager\"},{\"Employee\":{\"Name\":\"E1\",\"Details\":[{\"Country\":\"Denmark\",\"Age\":\"30\",\"Name\":\"Svein\",\"Language\":\"Danish\",\"Roles\":[{\"Job\":\"Manager\",\"Salary\":300},{\"Job\":\"Developer\",\"Salary\":400}]}]},\"Job\":\"Developer\"}]}]}]}", result);
         }
@@ -363,6 +363,20 @@ namespace JUST.UnitTests.Arrays
             var result = new JsonTransformer().Transform(transformer, input);
 
             Assert.AreEqual("[[{\"sku\":\"a\",\"id\":1},{\"sku\":\"b\",\"id\":1},{\"sku\":\"c\",\"id\":1}],[{\"sku\":\"a\",\"id\":2},{\"sku\":\"b\",\"id\":2},{\"sku\":\"c\",\"id\":2}]]", result);
+        }
+
+        [Test]
+        public void LoopScope()
+        {
+            var input = "{\"array\":[{\"resource\":\"Location\",\"count\": { \"number\": 3 } },{\"resource\":\"Organization\", \"count\": { \"number\": 10 } }] }";
+            var transformer = "{\"result\":{\"#loop($.array)\":{ \"#scope($.count)\": { \"number\": \"#valueof($.number)\" } } } }";
+            var context = new JUSTContext
+            {
+                EvaluationMode = EvaluationMode.Strict
+            };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("{\"result\":[{\"number\":3},{\"number\":10}]}", result);
         }
     }
 }
