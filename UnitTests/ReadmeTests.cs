@@ -280,6 +280,19 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"result\":{\"value_of_prop1\":\"val1\",\"value_of_prop2\":\"val3\"},\"result2\":{\"level1_prop\":\"lvl1_val1\",\"level2_prop\":\"lvl2_val2\",\"root_prop\":\"some_val\",\"lvl2_scope_alias\":{\"alias_prop_lvl1\":\"val1\",\"lvl2_prop2\":\"lvl2_val2\"}}}", result);
         }
+
+        [Test]
+        public void Issue298()
+        {
+            const string input = "{ \"items\": [ { \"id\": \"234234235\", \"keyTypeA\": \"One\" }, { \"keyTypeA\": \"One\" }, { \"keyTypeA\": \"Two\" }, { \"keyTypeB\": \"Red\" } ]}";
+            //const string transformer = "{ \"items1\": { \"#loop($.items[?(@.keyTypeA == 'One')])\": { \"id\": \"some_id\", \"keyTypeA\": \"some_key\" } }, \"items2\": { \"#loop($.items[?(@.keyTypeA != 'One')])\": \"#currentvalue()\" }, \"items3\": { \"#loop($.items)\": { \"#ifgroup(#ifcondition(#existsandnotempty($.keyTypeA),False,True,False))\": { \"#\": [ \"#copy($)\"] } } } }";
+            //const string transformer = "{ \"items\": \"#applyover({ 'items1': { '#loop($.items[?/(@.keyTypeA == `One`/)])': { 'id': 'some_id'/, 'keyTypeA': 'some_key' } }/, 'items2': { '#loop($.items[?/(@.keyTypeA != `One`/)])': '#currentvalue()' }/, 'items3': { '#loop($.items)': { '#ifgroup(#ifcondition(#exists($.keyTypeA)/,False/,True/,False))': { '#': [ '#copy($)'] } } } }, '#xconcat(#valueof($.items1), #valueof($.items2), #valueof($.items3))')\" }";
+            //const string transformer = "{ \"items\": \"#applyover({ 'items1': { '#loop($.items[?/(@.keyTypeA == `One`/)])': { 'id': 'some_id'/, 'keyTypeA': 'some_key' } }/, 'items2': { '#loop($.items[?/(@.keyTypeA != `One`/)])': '#currentvalue()' }/, 'items3': { '#loop($.items)': { '#ifgroup(#ifcondition(#exists($.keyTypeA)/,False/,True/,False))': '#currentvalue()' } } }, '#xconcat(#valueof($.items1), #valueof($.items2), #valueof($.items3))')\" }";
+            const string transformer = "{ \"items\": { \"#loop($.items)\": { \"#loop($)\": { \"#eval(#currentproperty())\": \"#ifcondition(#currentproperty(),id,987234345,#ifcondition(#currentvalueatpath($.keyTypeA),One,Three,#currentvalueatpath(#concat($.,#currentproperty()))))\" } } }}";
+            var result = new JsonTransformer(new JUSTContext() { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{\"items\":[{\"id\":\"987234345\",\"keyTypeA\":\"Three\"},{\"keyTypeA\":\"Three\"},{\"keyTypeA\":\"Two\"},{\"keyTypeB\":\"Red\"}]}", result);
+        }
     }
 
     public class Token
