@@ -8,7 +8,7 @@ namespace JUST
 {
     public abstract class Transformer
     {
-        protected int _loopCounter = 0;
+        protected int _levelCounter = 0;
 
         protected readonly JUSTContext Context;
 
@@ -184,9 +184,11 @@ namespace JUST
             {
                 return stringRef.Substring(startIndex, length);
             }
-            catch (Exception ex)
+            catch
             {
-                ExceptionHelper.HandleException(ex, context.IsStrictMode());
+                if (context.IsStrictMode()) {
+                    throw;
+                }
             }
             return null;
         }
@@ -228,7 +230,7 @@ namespace JUST
                 {
                     if (context.IsStrictMode() && token.Type != JTokenType.String)
                     {
-                        throw new Exception($"Invalid value in array to concatenate: {token.ToString()}");
+                        throw new Exception($"Invalid value in array to concatenate: {token}");
                     }
                     result += token.ToString();
                 }
@@ -318,12 +320,10 @@ namespace JUST
                 foreach (JToken token in parsedArray.Children())
                 {
                     JToken selectedToken = GetToken<T>(token, path, context);
-                    result += Convert.ToDecimal(selectedToken.ToString());
-                    // var selector = context.Resolve<T>(token);
-                    // if (selector.Select(path) is JToken selectedToken)
-                    // {
-                    //     result += Convert.ToDecimal(selectedToken.ToString());
-                    // }
+                    if (selectedToken != null)
+                    {
+                        result += Convert.ToDecimal(selectedToken.ToString());
+                    }
                 }
             }
 
@@ -367,12 +367,10 @@ namespace JUST
                 foreach (JToken token in parsedArray.Children())
                 {
                     JToken selectedToken = GetToken<T>(token, path, context);
-                    result += Convert.ToDecimal(selectedToken.ToString());
-                    // var selector = context.Resolve<T>(token);
-                    // if (selector.Select(path) is JToken selectedToken)
-                    // {
-                    //     result += Convert.ToDecimal(selectedToken.ToString());
-                    // }
+                    if (selectedToken != null)
+                    {
+                        result += Convert.ToDecimal(selectedToken.ToString());
+                    }
                 }
             }
 
@@ -464,8 +462,11 @@ namespace JUST
                 foreach (JToken token in parsedArray.Children())
                 {
                     JToken selectedToken = GetToken<T>(token, path, context);
-                    decimal thisValue = Convert.ToDecimal(selectedToken.ToString());
-                    result = Math.Min(result ?? decimal.MaxValue, thisValue);
+                    if (selectedToken != null)
+                    {
+                        decimal thisValue = Convert.ToDecimal(selectedToken.ToString());
+                        result = Math.Min(result ?? decimal.MaxValue, thisValue);
+                    }
                 }
             }
 
@@ -747,7 +748,7 @@ namespace JUST
             }
             else if (val is IEnumerable enumerable)
             {
-                var enumerator = enumerable.GetEnumerator();
+                IEnumerator enumerator = enumerable.GetEnumerator();
                 while (enumerator.MoveNext())
                 {
                     result++;

@@ -31,9 +31,12 @@ namespace JUST
             {
                 return InvokeCustomMethod<T>(methodInfo, parameters, convertParameters, context);
             }
-            catch (Exception ex)
+            catch
             {
-                ExceptionHelper.HandleException(ex, context.IsStrictMode());
+                if (context.IsStrictMode())
+                {
+                    throw;
+                }
             }
             return GetDefaultValue(methodInfo.ReturnType);
         }
@@ -203,7 +206,7 @@ namespace JUST
             return GetTypedValue(GetType(jType), val, IsStrictMode);
         }
 
-        internal static object GetTypedValue(Type pType, object val, bool IsStrictMode)
+        internal static object GetTypedValue(Type pType, object val, bool isStrictMode)
         {
             object typedValue = val;
             var converter = TypeDescriptor.GetConverter(pType);
@@ -249,9 +252,12 @@ namespace JUST
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                ExceptionHelper.HandleException(ex, IsStrictMode);
+                if (isStrictMode)
+                {
+                    throw;
+                } 
                 typedValue = GetDefaultValue(pType);
             }
             return typedValue;
