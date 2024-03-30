@@ -10,13 +10,15 @@ internal struct LevelKey
 
 internal sealed class State
 {
-    internal State(JToken transformer, JToken input, int levelCounter)
+    internal State(JToken transformer, JToken input)
     {
         Transformer = transformer;
         ParentArray = new Dictionary<LevelKey, JArray>();
-        CurrentArrayToken = new Dictionary<LevelKey, JToken> { { new LevelKey { Level = levelCounter, Key = "root"}, input } };
-        CurrentScopeToken = new Dictionary<LevelKey, JToken> { { new LevelKey { Level = levelCounter, Key = "root"}, input } };
+        CurrentArrayToken = new Dictionary<LevelKey, JToken> { { new LevelKey { Level = LevelCounter++, Key = "root"}, input } };
+        CurrentScopeToken = new Dictionary<LevelKey, JToken> { { new LevelKey { Level = LevelCounter++, Key = "root"}, input } };
     }
+
+    internal int LevelCounter = 0;
     internal JToken Transformer { get; private set; }
     internal IDictionary<LevelKey, JArray> ParentArray { get; private set; }
     internal IDictionary<LevelKey, JToken> CurrentArrayToken { get; private set; }

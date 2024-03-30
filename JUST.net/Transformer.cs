@@ -8,8 +8,6 @@ namespace JUST
 {
     public abstract class Transformer
     {
-        protected int _levelCounter = 0;
-
         protected readonly JUSTContext Context;
 
         public Transformer(JUSTContext context)

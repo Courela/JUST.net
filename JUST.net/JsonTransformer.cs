@@ -106,7 +106,7 @@ namespace JUST
         public JToken Transform(JObject transformer, JToken input)
         {
             var parentToken = (JToken)transformer;
-            State state = new State(transformer, input, _levelCounter);
+            State state = new State(transformer, input);
             RecursiveEvaluate(ref parentToken, state);
             return parentToken;
         }
@@ -448,8 +448,8 @@ namespace JUST
             var args = ExpressionHelper.SplitArguments(arguments, Context.EscapeChar);
             var previousAlias = "root";
             args[0] = (string)ParseFunction(args[0], state);
-            _levelCounter++;
-            string alias = args.Length > 1 ? (string)ParseFunction(args[1].Trim(), state) : $"loop{_levelCounter}";
+            state.LevelCounter++;
+            string alias = args.Length > 1 ? (string)ParseFunction(args[1].Trim(), state) : $"loop{state.LevelCounter}";
 
             if (args.Length > 2)
             {
@@ -501,7 +501,7 @@ namespace JUST
                 {
                     using (IEnumerator<JToken> elements = array.GetEnumerator())
                     {
-                        state.ParentArray.Add(new LevelKey { Level = _levelCounter, Key = alias}, array);
+                        state.ParentArray.Add(new LevelKey { Level = state.LevelCounter, Key = alias}, array);
 
                         if (helper.arrayToForm == null)
                         {
@@ -514,9 +514,9 @@ namespace JUST
                                 JToken clonedToken = childToken.DeepClone();
                                 if (state.CurrentArrayToken.Any(a => a.Key.Key == alias))
                                 {
-                                    state.CurrentArrayToken.Remove(new LevelKey { Level = _levelCounter, Key = alias});
+                                    state.CurrentArrayToken.Remove(new LevelKey { Level = state.LevelCounter, Key = alias});
                                 }
-                                state.CurrentArrayToken.Add(new LevelKey { Level = _levelCounter, Key = alias}, elements.Current);
+                                state.CurrentArrayToken.Add(new LevelKey { Level = state.LevelCounter, Key = alias}, elements.Current);
                                 RecursiveEvaluate(ref clonedToken, state);
                                 foreach (JToken replacedProperty in clonedToken.Children())
                                 {
@@ -532,9 +532,9 @@ namespace JUST
                                 JToken clonedToken = childToken.DeepClone();
                                 if (state.CurrentArrayToken.Any(a => a.Key.Key == alias))
                                 {
-                                    state.CurrentArrayToken.Remove(new LevelKey { Level = _levelCounter, Key = alias});
+                                    state.CurrentArrayToken.Remove(new LevelKey { Level = state.LevelCounter, Key = alias});
                                 }
-                                state.CurrentArrayToken.Add(new LevelKey { Level = _levelCounter, Key = alias}, elements.Current);
+                                state.CurrentArrayToken.Add(new LevelKey { Level = state.LevelCounter, Key = alias}, elements.Current);
                                 RecursiveEvaluate(ref clonedToken, state);
                                 foreach (JToken replacedProperty in clonedToken.Children().Select(t => t.First))
                                 {
@@ -543,8 +543,8 @@ namespace JUST
                             }
                         }
 
-                        state.ParentArray.Remove(new LevelKey { Level = _levelCounter, Key = alias});
-                        state.CurrentArrayToken.Remove(new LevelKey { Level = _levelCounter, Key = alias});
+                        state.ParentArray.Remove(new LevelKey { Level = state.LevelCounter, Key = alias});
+                        state.CurrentArrayToken.Remove(new LevelKey { Level = state.LevelCounter, Key = alias});
                     }
                 }
             }
@@ -553,7 +553,7 @@ namespace JUST
                 helper.loopProperties = new List<string>();
 
             helper.loopProperties.Add(propertyName);
-            _levelCounter--;
+            state.LevelCounter--;
         }
 
         private bool IsArray(JToken arrayToken, string strArrayToken, State state, string alias)
@@ -566,8 +566,8 @@ namespace JUST
             var args = ExpressionHelper.SplitArguments(arguments, Context.EscapeChar);
             var previousAlias = "root";
             args[0] = (string)ParseFunction(args[0], state);
-            _levelCounter++;
-            string alias = args.Length > 1 ? (string)ParseFunction(args[1].Trim(), state) : $"scope{_levelCounter}";
+            state.LevelCounter++;
+            string alias = args.Length > 1 ? (string)ParseFunction(args[1].Trim(), state) : $"scope{state.LevelCounter}";
 
             if (args.Length > 2)
             {
@@ -587,19 +587,19 @@ namespace JUST
             JToken clonedToken = childToken.DeepClone();
             if (state.CurrentScopeToken.Any(s => s.Key.Key == alias))
             {
-                state.CurrentScopeToken.Remove(new LevelKey {Level = _levelCounter, Key = alias});
+                state.CurrentScopeToken.Remove(new LevelKey {Level = state.LevelCounter, Key = alias});
             }
-            state.CurrentScopeToken.Add(new LevelKey {Level = _levelCounter, Key = alias}, scopeToken);
+            state.CurrentScopeToken.Add(new LevelKey {Level = state.LevelCounter, Key = alias}, scopeToken);
             RecursiveEvaluate(ref clonedToken, state);
             helper.scopeToForm = clonedToken.Children().First().Value<JObject>();
             
-            state.CurrentScopeToken.Remove(new LevelKey {Level = _levelCounter, Key = alias});
+            state.CurrentScopeToken.Remove(new LevelKey {Level = state.LevelCounter, Key = alias});
 
             if (helper.scopeProperties == null)
                 helper.scopeProperties = new List<string>();
 
             helper.scopeProperties.Add(propertyName);
-            _levelCounter--;
+            state.LevelCounter--;
         }
 
         private void ConditionalGroupOperation(string propertyName, string arguments, State state, TransformHelper helper, JToken childToken)
@@ -1088,13 +1088,14 @@ namespace JUST
         {
             if (output == null && Context.IsLookInTransformed())
             {
-                state.CurrentScopeToken.Add(new LevelKey { Key = "transformed", Level = ++_levelCounter }, state.Transformer.Root);
+                state.LevelCounter++;
+                state.CurrentScopeToken.Add(new LevelKey { Key = $"transformed{state.LevelCounter}", Level = state.LevelCounter }, state.Transformer.Root);
                 //JToken tmpContext = state.GetInput(); //Context.Input;
                 //Context.Input = state.Transformer.Root;
                 output = ParseFunction(propVal, state);
                 //Context.Input = tmpContext;
-                state.CurrentScopeToken.Remove(state.CurrentScopeToken.Single(s => s.Key.Key == "transformed"));
-                _levelCounter--;
+                state.CurrentScopeToken.Remove(state.CurrentScopeToken.Single(s => s.Key.Key == $"transformed{state.LevelCounter}"));
+                state.LevelCounter--;
             }
             return output;
         }
