@@ -372,5 +372,36 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"filteredItems\":{\"name\":\"item2\",\"type\":\"someType\",\"selectable\":true,\"itemArray\":[{\"property1\":\"item2_value1\",\"property2\":\"item2_value2\"}]},\"summary\":{},\"aliasedItems\":{\"name\":\"item2\",\"type\":\"someType\",\"selectable\":true,\"itemArray\":[{\"property1\":\"item2_value1\",\"property2\":\"item2_value2\"}]}}", result);
         }
+
+        [Test]
+        public void Issue298()
+        {
+            const string input = "{ \"items\": [ { \"id\": \"234234235\", \"keyTypeA\": \"One\" }, { \"keyTypeA\": \"One\" }, { \"keyTypeA\": \"Two\" }, { \"keyTypeB\": \"Red\" } ]}";
+            //const string transformer = "{ \"items1\": { \"#loop($.items[?(@.keyTypeA == 'One')])\": { \"id\": \"some_id\", \"keyTypeA\": \"some_key\" } }, \"items2\": { \"#loop($.items[?(@.keyTypeA != 'One')])\": \"#currentvalue()\" }, \"items3\": { \"#loop($.items)\": { \"#ifgroup(#ifcondition(#existsandnotempty($.keyTypeA),False,True,False))\": { \"#\": [ \"#copy($)\"] } } } }";
+            //const string transformer = "{ \"items\": \"#applyover({ 'items1': { '#loop($.items[?/(@.keyTypeA == `One`/)])': { 'id': 'some_id'/, 'keyTypeA': 'some_key' } }/, 'items2': { '#loop($.items[?/(@.keyTypeA != `One`/)])': '#currentvalue()' }/, 'items3': { '#loop($.items)': { '#ifgroup(#ifcondition(#exists($.keyTypeA)/,False/,True/,False))': { '#': [ '#copy($)'] } } } }, '#xconcat(#valueof($.items1), #valueof($.items2), #valueof($.items3))')\" }";
+            //const string transformer = "{ \"items\": \"#applyover({ 'items1': { '#loop($.items[?/(@.keyTypeA == `One`/)])': { 'id': 'some_id'/, 'keyTypeA': 'some_key' } }/, 'items2': { '#loop($.items[?/(@.keyTypeA != `One`/)])': '#currentvalue()' }/, 'items3': { '#loop($.items)': { '#ifgroup(#ifcondition(#exists($.keyTypeA)/,False/,True/,False))': '#currentvalue()' } } }, '#xconcat(#valueof($.items1), #valueof($.items2), #valueof($.items3))')\" }";
+            //const string transformer = "{ \"items\": { \"#loop($.items)\": { \"#loop($)\": { \"#eval(#currentproperty())\": \"#ifcondition(#currentproperty(),id,987234345,#ifcondition(#currentvalueatpath($.keyTypeA),One,Three,#currentvalueatpath(#concat($.,#currentproperty()))))\" } } }}";
+            //const string transformer = "{ \"items1\": { \"#loop($.items)\": { \"#\": [ \"#copy($)\", \"#delete($.id)\" ]  } } }";
+            const string transformer = "{ \"items\": \"#applyover({ 'items1': { '#loop($.items[?/(@.keyTypeA == `One`/)])': { 'id': 'some_id'/, 'keyTypeA': 'some_key' } }/, 'items2': { '#loop($.items[?/(@.keyTypeA != `One`/)])': '#currentvalue()' }/, 'items3': { '#loop($.items[?/(@.keyTypeA == `One` && @.id/)])': { 'id': 'some_id', 'keyTypeA': 'Three' } } }, '#xconcat(#valueof($.items1), #valueof($.items2), #valueof($.items3))')\" }";
+            
+            var result = new JsonTransformer(new JUSTContext() { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{\"items\":[{\"id\":\"987234345\",\"keyTypeA\":\"Three\"},{\"keyTypeA\":\"Three\"},{\"keyTypeA\":\"Two\"},{\"keyTypeB\":\"Red\"}]}", result);
+        }
+
+        [Test]
+        public void Issue302()
+        {
+            const string input = "{ \"rows\": [ [ \"A1\", \"B1\", \"C1\" ], [ \"A2\", \"B2\", \"C2\" ], [ \"A3\", \"B3\", \"C3\" ] ], \"columns\": [ \"A\", \"B\", \"C\" ]}";
+            //const string transformer = "{ \"rows\": { \"#loop($.rows)\": [ \"#currentvalueatpath($[?/(@ =~ //^B.*$///)])\" ] } }";
+            //const string transformer = "{ \"rows\": { \"#loop($.rows)\": \"#currentvalueatpath($[?/(@ == 'B1'/)])\" } }";
+            //const string transformer = "{ \"rows\": { \"#loop($.rows)\": \"#currentvalue()\" } }";
+            
+            const string transformer = "{ \"rows\": { \"#loop($.rows)\": [ \"#currentvalueatpath($[?/(@ =~ //^B.*$///)])\" ] }, \"columns\": \"#valueof($.columns[?/(@ =~ //^B.*$///)])\" }";
+
+            var result = new JsonTransformer(new JUSTContext() { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
     }
 }
