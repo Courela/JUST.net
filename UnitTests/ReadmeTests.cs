@@ -280,6 +280,19 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"result\":{\"value_of_prop1\":\"val1\",\"value_of_prop2\":\"val3\"},\"result2\":{\"level1_prop\":\"lvl1_val1\",\"level2_prop\":\"lvl2_val2\",\"root_prop\":\"some_val\",\"lvl2_scope_alias\":{\"alias_prop_lvl1\":\"val1\",\"lvl2_prop2\":\"lvl2_val2\"}}}", result);
         }
+
+        [Test]
+        public void Issue309()
+        {
+            // const string input = "{ \"entityDataStore\": { \"entityData\": { \"entityParent\": { \"NODE1\": \"dummy value\", \"NODE2\": \"dummy value\", \"NODE3\": \"dummy value\", \"NODE4\": \"dummy value\", \"entityParent-entityChild\": [ { \"Id1\": \"dummy value\", \"name\": \"dummy value\", \"entity\": \"dummy value\", \"ParentName\": \"dummy value\" }, { \"Id1\": \"dummy value\", \"name\": \"dummy value\", \"entity\": \"dummy value\", \"ParentName\": \"dummy value\" } ] } } }}";
+            // const string transformer = "{ \"newChanges\": { \"dataMember\": \"entityParent-entityChild\",  \"fields\": { \"entityDataStore\": { \"#loop($.entityDataStore.entityData.entityParent.entityParent-entityChild, rows)\": { \"#loop($)\": { \"#eval(#xconcat(val,#currentindex()))\": { \"columnName\": \"#currentproperty()\", \"originalValue\": null, \"currentValue\": \"#currentvalueatpath(#xconcat($.,#currentproperty()))\" } } } } }} }";
+
+            const string input = "{ \"entityDataStore\": { \"entityData\": { \"entityParent\": { \"NODE1\": \"dummy value\", \"NODE2\": \"dummy value\", \"NODE3\": \"dummy value\", \"NODE4\": \"dummy value\", \"entityParent-entityChild\": { \"Id1\": \"dummy value\", \"name\": \"dummy value\", \"entity\": \"dummy value\", \"ParentName\": \"dummy value\" } } } }}";
+            const string transformer = "{ \"newChanges\": { \"dataMember\": \"entityParent-entityChild\",  \"fields\": { \"entityDataStore\": { \"#loop($.entityDataStore.entityData.entityParent.entityParent-entityChild, rows)\": {  \"columnName\": \"#currentproperty()\", \"originalValue\": null, \"currentValue\": \"#currentvalueatpath(#xconcat($.,#currentproperty()))\" } } } }  }";
+            var result = new JsonTransformer(new JUSTContext() { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
     }
 
     public class Token
