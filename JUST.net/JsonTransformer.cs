@@ -275,6 +275,7 @@ namespace JUST
                     loopContext.CurrentArrayElement.Add(key, elements.Current);
 
                     RecursiveEvaluate(ref clonedToken, loopContext, input);
+                    // TODO distinguish between array and object
                     if (function == arrayToken)
                     {
                         helper.arrayToForm ??= new JArray();
@@ -295,11 +296,7 @@ namespace JUST
                 }
             }
 
-            if (helper.loopProperties == null)
-            {
-                helper.loopProperties = new List<string>();
-            }
-
+            helper.loopProperties ??= new List<string>();
             helper.loopProperties.Add(propertyName);
 
             loopContext.ParentArray.Remove(key);
@@ -854,10 +851,7 @@ namespace JUST
                 JArray loopArray = JsonTransformer.GetLoopArray(loopToken, context.IsStrictMode());
                 KeyValuePair<string, JArray> k = new KeyValuePair<string, JArray>(loopAlias ?? $"loop{++this._loopCounter}", loopArray);
 
-                if (localLoopContext == null)
-                {
-                    localLoopContext = new LoopContext(null, null);
-                }
+                localLoopContext ??= new LoopContext(null, null);
                 localLoopContext.ParentArray.Add(k);
 
                 return loopArray;
@@ -908,12 +902,12 @@ namespace JUST
             return parseResult.Value;
         }
 
-        public static string GetAlias(string alias, IDictionary<string, JToken> currentArrayElement)
+        internal static string GetAlias(string alias, IDictionary<string, JToken> currentArrayElement)
         {
             return !string.IsNullOrEmpty(alias) ? alias : currentArrayElement.Last().Key;
         }
 
-        public static JArray GetLoopArray(object loopToken, bool isStrictMode)
+        internal static JArray GetLoopArray(object loopToken, bool isStrictMode)
         {
             JArray result = new JArray();
             if (loopToken is Array)

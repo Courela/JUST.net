@@ -33,4 +33,10 @@ This will repace the JUST and JUST.NETCore packages.</Description>
     <ProjectReference Include="..\CSharpParserGenerator\CSharpParserGenerator.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>JUST.net.UnitTests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>
