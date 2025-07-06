@@ -704,7 +704,7 @@ namespace JUST.UnitTests.Gramar
             previousAlias = previousAlias != null ? previousAlias : currentArrayElement.Last().Key;
             JToken input = currentArrayElement[previousAlias];
             object loopToken = Invoke("valueof", true, new object[] { loopPath, input, context }, context);
-            JArray loopArray = JsonTransformer.GetLoopArray(loopToken);
+            JArray loopArray = JsonTransformer.GetLoopArray(loopToken, context.IsStrictMode());
             KeyValuePair<string, JArray> k = new KeyValuePair<string, JArray>(loopAlias ?? $"loop{++loopCounter}", loopArray);
 
             if (parentArray == null)

@@ -53,7 +53,7 @@ namespace JUST.UnitTests
 
             var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
-            Assert.AreEqual("{\"stringresult\":{\"lastindexofand\":21,\"firstindexofand\":6,\"substring\":\"veryunuasua\",\"concat\":null,\"length_string\":34,\"length_array\":5,\"length_path\":5},\"mathresult\":{\"add\":4,\"subtract\":4,\"multiply\":6,\"divide\":3,\"round\":10.01}}", result);
+            Assert.AreEqual("{\"stringresult\":{\"lastindexofand\":21,\"firstindexofand\":6,\"substring\":\"veryunuasua\",\"concat\":null,\"length_string\":34,\"length_array\":5,\"length_path\":5},\"mathresult\":{\"add\":4.0,\"subtract\":4,\"multiply\":6.0,\"divide\":3.0,\"round\":10.01}}", result);
         }
 
         [Test]

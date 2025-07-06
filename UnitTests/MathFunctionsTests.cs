@@ -12,7 +12,7 @@ namespace JUST.UnitTests
 
             var result = new JsonTransformer().Transform(transformer, ExampleInputs.NumbersArray);
 
-            Assert.AreEqual("{\"mathresult\":{\"add\":4}}", result);
+            Assert.AreEqual("{\"mathresult\":{\"add\":4.0}}", result);
         }
 
         [Test]
@@ -32,7 +32,7 @@ namespace JUST.UnitTests
 
             var result = new JsonTransformer().Transform(transformer, ExampleInputs.NumbersArray);
 
-            Assert.AreEqual("{\"mathresult\":{\"multiply\":6}}", result);
+            Assert.AreEqual("{\"mathresult\":{\"multiply\":6.0}}", result);
         }
 
         [Test]
@@ -42,7 +42,7 @@ namespace JUST.UnitTests
 
             var result = new JsonTransformer().Transform(transformer, ExampleInputs.NumbersArray);
 
-            Assert.AreEqual("{\"mathresult\":{\"divide\":3}}", result);
+            Assert.AreEqual("{\"mathresult\":{\"divide\":3.0}}", result);
         }
 
         [TestCase("0.00154", "0.00", 2)]
