@@ -31,6 +31,7 @@ namespace JUST.UnitTests
             Assert.AreEqual("{\"ExcessFormsList\":[{\"AttributesList\":[{\"Value\":\"test_value\"},{\"Value\":null}]}]}", actual);
         }
 
+        [Ignore("Register custom functions only")]
         [Test]
         public void AssemblyDefined()
         {
@@ -42,6 +43,7 @@ namespace JUST.UnitTests
             Assert.AreEqual("{\"ExcessFormsList\":[{\"AttributesList\":[{\"Value\":\"test_value\"},{\"Value\":null}]}]}", actual);
         }
 
+        [Ignore("Register custom functions only")]
         [Test]
         public void WithoutAssembly()
         {

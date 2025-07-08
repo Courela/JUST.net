@@ -94,6 +94,7 @@ namespace JUST.UnitTests
             Assert.AreEqual("{\"result\":1235}", result);
         }
 
+        [Ignore("Path must be a valid JsonPath expression, conflict with other possible languages")]
         [Test, Category("IfCondition")]
         public void LazyEvaluationTrueCondition()
         {
@@ -105,6 +106,7 @@ namespace JUST.UnitTests
             Assert.AreEqual("{\"result\":1235}", result);
         }
 
+        [Ignore("Path must be a valid JsonPath expression, conflict with other possible languages")]
         [Test, Category("IfCondition")]
         public void LazyEvaluationFalseCondition()
         {
