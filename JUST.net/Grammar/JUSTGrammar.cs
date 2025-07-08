@@ -183,7 +183,7 @@ namespace JUST.Gramar
                 [ELang.Sharp] = $"(?<!{EscapeCharExpression(escapeChar)})#",
                 [ELang.JsonPathEx] = "(?i)\\$[\\.a-z\\[\\]0-9_\\-\\?&\\*\\s:]*",
                 [ELang.Number] = "\\d+\\.?\\d*",
-                [ELang.String] = "(?i)[a-z0-9_\\-\\.@='\\[\\]\\s:#]+",  // | and & removed for allowing them as escape chars 
+                [ELang.String] = "(?i)[a-z0-9_\\-\\.@='\\[\\]&\\s:#]+",  // | and & removed for allowing them as escape chars 
                 //[ELang.String] = "(?i)(?:[a-z0-9_\\-\\.]*(?:\\/\\(|\\/\\)|\\/,|\\/\\/)+?)|(?:(?:\\/\\(|\\/\\)|\\/,|\\/\\/)*?[a-z0-9_\\-\\.]+)",
                 [ELang.EscapeChar] = EscapeCharExpression(escapeChar),
             });

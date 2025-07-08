@@ -104,8 +104,8 @@ namespace JUST.UnitTests
             Assert.AreEqual("{\"result\":\"/_end\"}", result);
         }
 
-        //[TestCase("@.code == 'ECC100' && 1 == 1")]
         [TestCase("@.code == 'ECC100'")]
+        [TestCase("@.code == 'ECC100' && 1 == 1")]
         [TestCase("@.code == 'ECC100' && 'a' == 'a'")]
         public void OneArgumentFunctionWithEscapedChars(string filter)
         {
