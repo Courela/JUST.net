@@ -12,7 +12,7 @@ namespace JUST.UnitTests
         public void LargeInput()
         {
             var input = File.ReadAllText("Inputs/large_input.json");
-            const string transformer = "{ \"result\": { \"#loop($.list)\": { \"id\": \"#currentindex()\", \"name\": \"#concat(#currentvalueatpath($.title), #currentvalueatpath($.name))\", \"contact\": \"#currentvalueatpath($.contacts[?(@.is_default==true)])\", \"address\": \"#currentvalueatpath($.addresses[0])\" } }";
+            const string transformer = "{ \"result\": { \"#loop($.list)\": { \"id\": \"#currentindex()\", \"name\": \"#concat(#currentvalueatpath($.title), #currentvalueatpath($.name))\", \"contact\": \"#currentvalueatpath($.contacts[?/(@.is_default==true/)])\", \"address\": \"#currentvalueatpath($.addresses[0])\" } }";
 
             var w = Stopwatch.StartNew();
             new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
