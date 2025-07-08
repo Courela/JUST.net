@@ -895,7 +895,6 @@ namespace JUST
                 loopOverAliasFunc,
                 replaceFunc,
                 deleteFunc,
-                () => this.Context.EscapeChar,
                 this.Context);
             if (!parseResult.Success && this.Context.IsStrictMode())
             {

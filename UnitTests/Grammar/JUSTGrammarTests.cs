@@ -127,7 +127,6 @@ namespace JUST.UnitTests.Gramar
                 (loopPath, loopAlias, previousAlias, context) => null,
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -155,7 +154,6 @@ namespace JUST.UnitTests.Gramar
                 (loopPath, loopAlias, previousAlias, context) => null,
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -188,7 +186,6 @@ namespace JUST.UnitTests.Gramar
                 (loopPath, loopAlias, previousAlias, context) => null,
                 (arg1, arg2, context) => ReplaceFunc(arg1, arg2, context, input),
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -226,7 +223,6 @@ namespace JUST.UnitTests.Gramar
                 (loopPath, loopAlias, previousAlias, context) => null,
                 (arg1, arg2, context) => null,
                 (arg1, context) => DeleteFunc(arg1, context, input),
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -263,7 +259,6 @@ namespace JUST.UnitTests.Gramar
                     LoopOverAliasFunc(loopPath, loopAlias, previousAlias, context, null, new Dictionary<string, JToken> { { "root", this._input } }, 0),
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -305,7 +300,6 @@ namespace JUST.UnitTests.Gramar
                         1),
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -345,7 +339,6 @@ namespace JUST.UnitTests.Gramar
                         1),
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -386,7 +379,6 @@ namespace JUST.UnitTests.Gramar
                         1),
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -428,7 +420,6 @@ namespace JUST.UnitTests.Gramar
                         1),
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -455,7 +446,6 @@ namespace JUST.UnitTests.Gramar
                 (loopPath, loopAlias, previousAlias, context) => null,
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -483,7 +473,6 @@ namespace JUST.UnitTests.Gramar
                 (loopPath, loopAlias, previousAlias, context) => null,
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -518,7 +507,6 @@ namespace JUST.UnitTests.Gramar
                 (loopPath, loopAlias, previousAlias, context) => null,
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -579,7 +567,6 @@ namespace JUST.UnitTests.Gramar
                 (loopPath, loopAlias, previousAlias, context) => null,
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -608,7 +595,6 @@ namespace JUST.UnitTests.Gramar
                 (loopPath, loopAlias, previousAlias, context) => null,
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
@@ -637,7 +623,6 @@ namespace JUST.UnitTests.Gramar
                 (loopPath, loopAlias, previousAlias, context) => null,
                 (arg1, arg2, context) => null,
                 (arg1, context) => null,
-                () => context.EscapeChar,
                 context);
             
             PrintResults(parseResult);
