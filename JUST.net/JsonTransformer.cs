@@ -260,7 +260,8 @@ namespace JUST
         {
             object function = ParseFunction(propertyName, ref loopContext, input);
             JArray arrayToken = function is JArray ? function as JArray : GetPropertiesArray(function, Context.IsStrictMode());
-            
+
+            bool isObject = loopContext?.IsObject ?? false;
             string key = loopContext?.ParentArray.Last().Key ?? RootAlias;
             using (IEnumerator<JToken> elements = arrayToken.GetEnumerator())
             {
@@ -275,23 +276,13 @@ namespace JUST
                     loopContext.CurrentArrayElement.Add(key, elements.Current);
 
                     RecursiveEvaluate(ref clonedToken, loopContext, input);
-                    // TODO distinguish between array and object
-                    if (function == arrayToken)
+                    if (isObject)
                     {
-                        helper.arrayToForm ??= new JArray();
-                        foreach (JToken replacedProperty in clonedToken.Children())
-                        {
-                            JToken tokenToAdd = replacedProperty.Type != JTokenType.Null ? replacedProperty : new JObject();
-                            helper.arrayToForm.Add(tokenToAdd);
-                        }
+                        DictionaryToForm(helper, clonedToken);
                     }
                     else
                     {
-                        helper.dictToForm ??= new JObject();
-                        foreach (JToken replacedProperty in clonedToken.Children())
-                        {
-                            helper.dictToForm.Add(replacedProperty);
-                        }
+                        ArrayToForm(helper, clonedToken);
                     }
                 }
             }
@@ -302,6 +293,30 @@ namespace JUST
             loopContext.ParentArray.Remove(key);
             loopContext.CurrentArrayElement.Remove(key);
             _loopCounter--;
+        }
+
+        private static void DictionaryToForm(TransformHelper helper, JToken clonedToken)
+        {
+            helper.dictToForm ??= new JObject();
+            foreach (JObject replacedProperty in clonedToken.Children())
+            {
+                foreach (var item in replacedProperty.Children())
+                {
+                    JProperty p = item as JProperty;
+                    string name = p.Name;
+                    helper.dictToForm.Add(name, p.Value);
+                }
+            }
+        }
+
+        private static void ArrayToForm(TransformHelper helper, JToken clonedToken)
+        {
+            helper.arrayToForm ??= new JArray();
+            foreach (JToken replacedProperty in clonedToken.Children())
+            {
+                JToken tokenToAdd = replacedProperty.Type != JTokenType.Null ? replacedProperty : new JObject();
+                helper.arrayToForm.Add(tokenToAdd);
+            }
         }
 
         private static JArray GetPropertiesArray(object arrayToken, bool isStrictMode)
@@ -776,7 +791,7 @@ namespace JUST
                     throw new ArgumentException($"Unknown loop alias: '{argumentArr[1]}'");
                 }
             }
-            JToken localInput = alias != null ? loopContext.CurrentArrayElement[alias] : loopContext.CurrentArrayElement?.Last().Value ?? input;
+            JToken localInput = alias != null ? loopContext?.CurrentArrayElement[alias] : loopContext?.CurrentArrayElement.Last().Value ?? input;
             JToken selectedToken = GetSelectableToken(localInput, Context).Select(jsonPath);
             return selectedToken;
         }
@@ -818,6 +833,7 @@ namespace JUST
         private object ParseFunction(string functionString, ref LoopContext loopContext, JToken input)
         {
             LoopContext localLoopContext = loopContext;
+            bool isObject = false;
 
             Func<string, bool, object[], IContext, object> invokeFunc = (fn, convertParameters, parameters, context) =>
             {
@@ -848,10 +864,11 @@ namespace JUST
                 previousAlias = previousAlias ?? localLoopContext?.CurrentArrayElement.Last().Key ?? RootAlias;
                 JToken loopInput = localLoopContext?.CurrentArrayElement?[previousAlias] ?? input;
                 object loopToken = Invoke("valueof", true, new object[] { loopPath, loopInput, context });
-                JArray loopArray = JsonTransformer.GetLoopArray(loopToken, context.IsStrictMode());
+                JArray loopArray = JsonTransformer.GetLoopArray(loopToken, context.IsStrictMode(), out isObject);
                 KeyValuePair<string, JArray> k = new KeyValuePair<string, JArray>(loopAlias ?? $"loop{++this._loopCounter}", loopArray);
 
                 localLoopContext ??= new LoopContext(null, null);
+                localLoopContext.IsObject = isObject;
                 localLoopContext.ParentArray.Add(k);
 
                 return loopArray;
@@ -898,6 +915,7 @@ namespace JUST
                         loopContext.ParentArray.Add(item);
                     }
                 }
+                loopContext.IsObject = isObject;
             }
             return parseResult.Value;
         }
@@ -907,8 +925,9 @@ namespace JUST
             return !string.IsNullOrEmpty(alias) ? alias : currentArrayElement.Last().Key;
         }
 
-        internal static JArray GetLoopArray(object loopToken, bool isStrictMode)
+        internal static JArray GetLoopArray(object loopToken, bool isStrictMode, out bool isObject)
         {
+            isObject = false;
             JArray result = new JArray();
             if (loopToken is Array)
             {
@@ -921,6 +940,7 @@ namespace JUST
             else if (loopToken is JObject)
             {
                 result = GetPropertiesArray(loopToken, isStrictMode);
+                isObject = true;
             }
             return result;
         }

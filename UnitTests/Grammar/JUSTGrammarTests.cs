@@ -701,10 +701,11 @@ namespace JUST.UnitTests.Gramar
 
         JArray LoopOverAliasFunc(string loopPath, string loopAlias, string previousAlias, IContext context, IDictionary<string, JArray> parentArray, IDictionary<string, JToken> currentArrayElement, int loopCounter)
         {
+            bool IsObject;
             previousAlias = previousAlias != null ? previousAlias : currentArrayElement.Last().Key;
             JToken input = currentArrayElement[previousAlias];
             object loopToken = Invoke("valueof", true, new object[] { loopPath, input, context }, context);
-            JArray loopArray = JsonTransformer.GetLoopArray(loopToken, context.IsStrictMode());
+            JArray loopArray = JsonTransformer.GetLoopArray(loopToken, context.IsStrictMode(), out IsObject);
             KeyValuePair<string, JArray> k = new KeyValuePair<string, JArray>(loopAlias ?? $"loop{++loopCounter}", loopArray);
 
             if (parentArray == null)

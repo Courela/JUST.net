@@ -227,6 +227,19 @@ namespace JUST.UnitTests.Arrays
         }
 
         [Test]
+        public void SimpleLoopOverProperties()
+        {
+            var input = "{ \"spell_numbers\": { \"3\": \"three\", \"2\": \"two\", \"1\": \"one\" } }";
+            var transformer = "{ \"numbers\": { \"#loop($.spell_numbers)\": { \"#eval(#currentproperty())\": \"#currentvalueatpath(#concat($.,#currentproperty()))\" } } }";
+            
+            using (JsonTransformer t = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }))
+            {
+                var result = t.Transform(transformer, input);
+                Assert.AreEqual("{\"numbers\":{\"3\":\"three\",\"2\":\"two\",\"1\":\"one\"}}", result);
+            }
+        }
+
+        [Test]
         public void LoopOverProperties()
         {
             var input = "{ \"animals\": { \"cat\": { \"legs\": 4, \"sound\": \"meow\" }, \"dog\": { \"legs\": 4, \"sound\": \"woof\" } }, \"spell_numbers\": { \"3\": \"three\", \"2\": \"two\", \"1\": \"one\" } }";
