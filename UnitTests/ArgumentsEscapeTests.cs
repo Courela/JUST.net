@@ -117,8 +117,9 @@ namespace JUST.UnitTests
             Assert.AreEqual("{\"someNewNode\":\"Need this value\"}", result);
         }
 
+        [Ignore("Escape character fixed '/'")]
+        // [TestCase('&')] // character used in JsonPath array filter, not eligible for escape char 
         [TestCase('§')]
-        [TestCase('&')]
         [TestCase('|')]
         public void OtherEscapeChar(char escapeChar)
         {

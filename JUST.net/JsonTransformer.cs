@@ -23,8 +23,7 @@ namespace JUST
 
         public JsonTransformer(JUSTContext context = null) : base(context)
         {
-            char escapeChar = context != null ? context.EscapeChar : '/';
-            this.Grammar = Gramar.Grammar<T>.GetInstance(escapeChar);
+            this.Grammar = Gramar.Grammar<T>.GetInstance();
         }
         public string Transform(string transformerJson, string inputJson)
         {
@@ -896,6 +895,7 @@ namespace JUST
                 loopOverAliasFunc,
                 replaceFunc,
                 deleteFunc,
+                () => this.Context.EscapeChar,
                 this.Context);
             if (!parseResult.Success && this.Context.IsStrictMode())
             {

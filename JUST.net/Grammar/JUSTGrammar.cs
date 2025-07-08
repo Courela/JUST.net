@@ -3,11 +3,13 @@ using JUST.net.Selectables;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace JUST.Gramar
 {
     public class Grammar<TSelectable> : IDisposable where TSelectable : ISelectableToken
     {
+        private readonly char[] JsonEscapedChars = { '|', '[', ']', '\\', '{', '}' };
         private static readonly object _lock = new object();
         
         private static Grammar<TSelectable> _instance;
@@ -20,11 +22,11 @@ namespace JUST.Gramar
         private Func<string, string, string, IContext, JArray> _loopOverAliasFunc;
         private Func<dynamic, dynamic, IContext, dynamic> _replaceFunc;
         private Func<dynamic, IContext, dynamic> _deleteFunc;
-        private Func<string> _escapeCharFunc;
+        private Func<char> _escapeCharFunc;
 
-        private Grammar(char? escapeChar)
+        private Grammar()
         {
-            _parser = GetParser(escapeChar);
+            _parser = GetParser();
         }
 
         public ParseResult Parse(
@@ -35,6 +37,7 @@ namespace JUST.Gramar
             Func<string, string, string, IContext, JArray> loopOverAliasFunc,
             Func<dynamic, dynamic, IContext, dynamic> replaceFunc,
             Func<dynamic, IContext, dynamic> deleteFunc,
+            Func<char> escapeCharFunc,
             IContext context)
         {
             this._context = context;
@@ -44,16 +47,17 @@ namespace JUST.Gramar
             this._loopOverAliasFunc = loopOverAliasFunc;
             this._replaceFunc = replaceFunc;
             this._deleteFunc = deleteFunc;
+            this._escapeCharFunc = escapeCharFunc;
             return _parser.Parse(expression);
         }
 
-        public static Grammar<TSelectable> GetInstance(char? escapeChar = null)
+        public static Grammar<TSelectable> GetInstance()
         {
             if (_instance == null)
             {
                 lock(_lock)
                 {
-                    _instance = new Grammar<TSelectable>(escapeChar);
+                    _instance = new Grammar<TSelectable>();
                 }
             }
             return _instance;
@@ -106,7 +110,7 @@ namespace JUST.Gramar
             ConstantSharp,ConstantComma,StringEmpty,ArrayEmpty
         }
         
-        private Parser<ELang> GetParser(char? escapeChar)
+        private Parser<ELang> GetParser()
         {
             var tokens = new LexerDefinition<ELang>(new Dictionary<ELang, TokenRegex>
             {
@@ -177,15 +181,15 @@ namespace JUST.Gramar
                 [ELang.ArrayEmpty] = "arrayempty",
                 
                 [ELang.Ignore] = "[ \\n]+",
-                [ELang.LParenthesis] = $"(?<!{EscapeCharExpression(escapeChar)})\\(",
-                [ELang.RParenthesis] = $"(?<!{EscapeCharExpression(escapeChar)})\\)",
-                [ELang.Comma] = $"(?<!{EscapeCharExpression(escapeChar)}),",
-                [ELang.Sharp] = $"(?<!{EscapeCharExpression(escapeChar)})#",
+                [ELang.LParenthesis] = $"(?<!{EscapeCharExpression(_escapeCharFunc)})\\(",
+                [ELang.RParenthesis] = $"(?<!{EscapeCharExpression(_escapeCharFunc)})\\)",
+                [ELang.Comma] = $"(?<!{EscapeCharExpression(_escapeCharFunc)}),",
+                [ELang.Sharp] = $"(?<!{EscapeCharExpression(_escapeCharFunc)})#",
                 [ELang.JsonPathEx] = "(?i)\\$[\\.a-z\\[\\]0-9_\\-\\?&\\*\\s:]*",
                 [ELang.Number] = "\\d+\\.?\\d*",
                 [ELang.String] = "(?i)[a-z0-9_\\-\\.@='\\[\\]&\\s:#]+",  // | and & removed for allowing them as escape chars 
                 //[ELang.String] = "(?i)(?:[a-z0-9_\\-\\.]*(?:\\/\\(|\\/\\)|\\/,|\\/\\/)+?)|(?:(?:\\/\\(|\\/\\)|\\/,|\\/\\/)*?[a-z0-9_\\-\\.]+)",
-                [ELang.EscapeChar] = EscapeCharExpression(escapeChar),
+                [ELang.EscapeChar] = EscapeCharExpression(_escapeCharFunc),
             });
         
             // EXPR -> Sharp FUNC
@@ -378,11 +382,12 @@ namespace JUST.Gramar
                 },
                 [ELang.STR_ESC] = new Token[][]
                 {
-                    new Token[] { ELang.String, ELang.ESC, ELang.STR_ESC, new Op(o => o[0] = o[0] + o[1] + o[2]) },
+                    // new Token[] { ELang.String, ELang.ESC, ELang.STR_ESC, new Op(o => o[0] = o[0] + o[1] + o[2]) },
                     new Token[] { ELang.ESC, ELang.STR_ESC, new Op(o => o[0] = o[0] + o[1]) },
                     //new Token[] { ELang.String, ELang.STR_REC, new Op(o => o[0] = o[0] + o[1]) },
-                    new Token[] { ELang.String, ELang.String, ELang.STR_ESC, new Op(o => o[0] = o[0] + o[1] + o[2]) },
-                    new Token[] { ELang.String },
+                    new Token[] { ELang.String, ELang.STR_ESC, new Op(o => o[0] = o[0] + o[1]) },
+                    // new Token[] { ELang.String, ELang.String, ELang.STR_ESC, new Op(o => o[0] = o[0] + o[1] + o[2]) },
+                    // new Token[] { ELang.String },
                     new Token[] { },
                 },
                 // [ELang.STR_REC] = new Token[][]
@@ -402,10 +407,16 @@ namespace JUST.Gramar
             return new ParserGenerator<ELang>(new Lexer<ELang>(tokens, ELang.Ignore), rules).CompileParser();
         }
 
-        private TokenRegex EscapeCharExpression(char? escapeChar)
+        private TokenRegex EscapeCharExpression(Func<char> escapeCharFn)
         {
-            char c = escapeChar ?? '/';
-            return $"\\{c}";
+            if (escapeCharFn == null)
+            {
+                return "\\/";
+            }
+
+            char escapeChar = escapeCharFn();
+            string escapedString = JsonEscapedChars.Contains(escapeChar) ? $"\\{escapeChar}" : $"{escapeChar}";
+            return escapedString;
         }
 
         // private object InvokeCheckLoop(string fn, string path, IDictionary<string, JToken> currentArrayElement, JToken input)
