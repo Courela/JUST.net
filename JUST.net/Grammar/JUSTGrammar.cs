@@ -64,7 +64,7 @@ namespace JUST.Gramar
             Ignore,
 
             // Non-terminal
-            EXPR,FUNC,ARGS,ARG,C_ARG,STR_ESC,ESC,STR_REC,
+            EXPR,FUNC,ARGS,ARG,C_ARG,STR_ESC,ESC, //STR_REC,
 
             // Terminal
             Sharp,JsonPathEx,LParenthesis,RParenthesis,Comma,String,Number,EscapeChar,
@@ -183,7 +183,7 @@ namespace JUST.Gramar
                 [ELang.Sharp] = $"(?<!{EscapeCharExpression(escapeChar)})#",
                 [ELang.JsonPathEx] = "(?i)\\$[\\.a-z\\[\\]0-9_\\-\\?&\\*\\s:]*",
                 [ELang.Number] = "\\d+\\.?\\d*",
-                [ELang.String] = "(?i)[a-z0-9_\\-\\.@='\\[\\]&\\s:\\|#]+",
+                [ELang.String] = "(?i)[a-z0-9_\\-\\.@='\\[\\]\\s:#]+",  // | and & removed for allowing them as escape chars 
                 //[ELang.String] = "(?i)(?:[a-z0-9_\\-\\.]*(?:\\/\\(|\\/\\)|\\/,|\\/\\/)+?)|(?:(?:\\/\\(|\\/\\)|\\/,|\\/\\/)*?[a-z0-9_\\-\\.]+)",
                 [ELang.EscapeChar] = EscapeCharExpression(escapeChar),
             });
@@ -385,11 +385,11 @@ namespace JUST.Gramar
                     new Token[] { ELang.String },
                     new Token[] { },
                 },
-                [ELang.STR_REC] = new Token[][]
-                {
-                    new Token[] { ELang.String, ELang.STR_REC, new Op(o => o[0] = o[0] + o[1]) },
-                    new Token[] { },
-                },
+                // [ELang.STR_REC] = new Token[][]
+                // {
+                //     new Token[] { ELang.String, ELang.STR_REC, new Op(o => o[0] = o[0] + o[1]) },
+                //     new Token[] { },
+                // },
                 [ELang.ESC] = new Token[][]
                 {
                     new Token[] { ELang.EscapeChar, ELang.Sharp, new Op(o => o[0] = o[1]) },
