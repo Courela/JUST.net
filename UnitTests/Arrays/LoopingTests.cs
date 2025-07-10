@@ -9,6 +9,19 @@ namespace JUST.UnitTests.Arrays
         public void CurrentValuePrimitive()
         {
             const string input = ExampleInputs.NumbersArray;
+            const string transformer = "{ \"iteration\": { \"#loop($.numbers)\": \"#currentvalue()\" }";
+
+            using (JsonTransformer t = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }))
+            {
+                var result = t.Transform(transformer, input);
+                Assert.AreEqual("{\"iteration\":[1,2,3,4,5]}", result);
+            }
+        }
+
+        [Test]
+        public void CurrentValueBuildObjectFromPrimitive()
+        {
+            const string input = ExampleInputs.NumbersArray;
             const string transformer = "{ \"iteration\": { \"#loop($.numbers)\": { \"current_value\": \"#currentvalue()\" } } }";
 
             using (JsonTransformer t = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }))
