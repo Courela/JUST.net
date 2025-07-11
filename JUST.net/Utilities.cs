@@ -134,7 +134,7 @@ namespace JUST
                             if (key == string.Empty)
                                 key += valueOfToken;
                             else
-                                key += ":" + valueOfToken;
+                                key += $"{context.SplitGroupChar}{valueOfToken}";
                         }
 
 
@@ -174,7 +174,7 @@ namespace JUST
 
                 JObject groupObj = new JObject();
 
-                string[] keys = pair.Key.Split(':');
+                string[] keys = pair.Key.Split(context.SplitGroupChar);
 
                 int i = 0;
                 foreach (string groupPropertyName in groupingPropertyNames)
