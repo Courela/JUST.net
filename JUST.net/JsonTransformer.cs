@@ -253,7 +253,7 @@ namespace JUST
                     ConditionalGroupOperation(property.Name, arguments, state, helper, childToken, input);
                     break;
                 case "loop":
-                    LoopOperation(property.Name, arguments, state, helper, childToken, input);
+                    LoopOperation(property.Name, state, helper, childToken, input);
                     helper.isLoop = true;
                     break;
                 case "eval":
@@ -274,7 +274,8 @@ namespace JUST
             object function = ParseFunction(propertyName, null, state, input);
             JArray arrayToken = function is JArray ? function as JArray : GetPropertiesArray(function, Context.IsStrictMode());
 
-            // bool isObject = loopContext?.IsObject ?? false;
+            // TODO revisit
+            bool isObject = false;
             string alias = state.ParentArray.Keys.Last().Key;
             using (IEnumerator<JToken> elements = arrayToken.GetEnumerator())
             {
@@ -737,10 +738,10 @@ namespace JUST
             }
         }
 
-        private bool IsArray(JToken arrayToken, string strArrayToken, State state, string alias)
-        {
-            return typeof(T) == typeof(JsonPathSelectable) && arrayToken.Type != JTokenType.Array && (Regex.IsMatch(strArrayToken ?? string.Empty, "\\[.+\\]$") || (state.CurrentArrayToken != null && state.CurrentArrayToken.Any(a => a.Key.Key == alias) && state.CurrentArrayToken.Single(a => a.Key.Key == alias).Value != null && Regex.IsMatch(state.CurrentArrayToken.Single(a => a.Key.Key == alias).Value.Value<string>(), "\\[.+\\]$")));
-        }
+        // private bool IsArray(JToken arrayToken, string strArrayToken, State state, string alias)
+        // {
+        //     return typeof(T) == typeof(JsonPathSelectable) && arrayToken.Type != JTokenType.Array && (Regex.IsMatch(strArrayToken ?? string.Empty, "\\[.+\\]$") || (state.CurrentArrayToken != null && state.CurrentArrayToken.Any(a => a.Key.Key == alias) && state.CurrentArrayToken.Single(a => a.Key.Key == alias).Value != null && Regex.IsMatch(state.CurrentArrayToken.Single(a => a.Key.Key == alias).Value.Value<string>(), "\\[.+\\]$")));
+        // }
 
         private void ScopeOperation(string propertyName, string arguments, State state, TransformHelper helper, JToken childToken, JToken input)
         {
@@ -1029,7 +1030,7 @@ namespace JUST
 
         private object ParseFunction(string functionString, JToken parentToken, State state, JToken input)
         {
-            LoopContext localLoopContext = loopContext;
+            // LoopContext localLoopContext = loopContext;
             bool isObject = false;
 
             Func<string, bool, object[], IContext, object> invokeFunc = (fn, convertParameters, parameters, context) =>
@@ -1040,8 +1041,8 @@ namespace JUST
             Func<string, string, IContext, object> invokeCheckLoopFunc = (fn, path, context) =>
             {
                 object result;
-                JToken loopInput = localLoopContext?.CurrentArrayElement.Last().Value != null ?
-                    localLoopContext.CurrentArrayElement.Last().Value :
+                JToken loopInput = state.CurrentArrayToken.Last().Value != null ?
+                    state.CurrentArrayToken.Last().Value :
                     input;
                 result = Invoke(fn, true, new object[] { path, loopInput, context });
                 return result;
@@ -1049,24 +1050,30 @@ namespace JUST
 
             Func<string, string, string, IContext, object> invokeLoopFunctionFunc = (fn, path, alias, context) =>
             {
-                string arrayAlias = GetAlias(alias, localLoopContext.CurrentArrayElement);
-                object[] parameters = !string.IsNullOrEmpty(path) ? 
-                    new object[] { localLoopContext.ParentArray[arrayAlias], localLoopContext.CurrentArrayElement[arrayAlias], path, context } :
-                    new object[] { localLoopContext.ParentArray[arrayAlias], localLoopContext.CurrentArrayElement[arrayAlias], context };
+                string arrayAlias = alias ?? state.CurrentArrayToken.Last().Key.Key;
+                object[] parameters = !string.IsNullOrEmpty(path) ?
+                    new object[] { state.ParentArray.Single(a => a.Key.Key == arrayAlias), state.CurrentArrayToken.Single(t => t.Key.Key == arrayAlias), path, context } :
+                    new object[] { state.ParentArray.Single(a => a.Key.Key == arrayAlias), state.CurrentArrayToken.Single(t => t.Key.Key == arrayAlias), context };
                 return Invoke(fn, true, parameters);
             };
 
             Func<string, string, string, IContext, JArray> loopOverAliasFunc = (loopPath, loopAlias, previousAlias, context) =>
             {
-                previousAlias = previousAlias ?? localLoopContext?.CurrentArrayElement.Last().Key ?? RootAlias;
-                JToken loopInput = localLoopContext?.CurrentArrayElement?[previousAlias] ?? input;
+                previousAlias = previousAlias ?? state.CurrentArrayToken.Last().Key.Key;
+                JToken loopInput = state.CurrentArrayToken.Single(l => l.Key.Key == previousAlias).Value;
                 object loopToken = Invoke("valueof", true, new object[] { loopPath, loopInput, context });
-                JArray loopArray = JsonTransformer.GetLoopArray(loopToken, context.IsStrictMode(), out isObject);
-                KeyValuePair<string, JArray> k = new KeyValuePair<string, JArray>(loopAlias ?? $"loop{++this._loopCounter}", loopArray);
+                JArray loopArray = loopToken as JArray ?? new JArray(loopToken); // JsonTransformer.GetLoopArray(loopToken, context.IsStrictMode(), out isObject);
+                // KeyValuePair<string, JArray> k = new KeyValuePair<string, JArray>(loopAlias ?? $"loop{++this._loopCounter}", loopArray);
+                LevelKey newLevelKey = new LevelKey()
+                {
+                    Level = this._levelCounter,
+                    Key = loopAlias ?? $"loop{++this._levelCounter}",
+                };
 
-                localLoopContext ??= new LoopContext(null, null);
-                localLoopContext.IsObject = isObject;
-                localLoopContext.ParentArray.Add(k);
+                // localLoopContext ??= new LoopContext(null, null);
+                // localLoopContext.IsObject = isObject;
+                // localLoopContext.ParentArray.Add(k);
+                state.ParentArray.Add(newLevelKey, loopArray);
 
                 return loopArray;
             };
@@ -1099,21 +1106,21 @@ namespace JUST
                 throw new Exception($"Error parsing '{functionString}': " + string.Join(Environment.NewLine, parseResult.Errors.Select(e => e.Description)));
             }
 
-            if (loopContext is null)
-            {
-                loopContext = localLoopContext;
-            }
-            else
-            {
-                foreach (KeyValuePair<string, JArray> item in localLoopContext.ParentArray)
-                {
-                    if (!loopContext.ParentArray.ContainsKey(item.Key))
-                    {
-                        loopContext.ParentArray.Add(item);
-                    }
-                }
-                loopContext.IsObject = isObject;
-            }
+            // if (loopContext is null)
+            // {
+            //     loopContext = localLoopContext;
+            // }
+            // else
+            // {
+            //     foreach (KeyValuePair<string, JArray> item in localLoopContext.ParentArray)
+            //     {
+            //         if (!loopContext.ParentArray.ContainsKey(item.Key))
+            //         {
+            //             loopContext.ParentArray.Add(item);
+            //         }
+            //     }
+            //     loopContext.IsObject = isObject;
+            // }
             return parseResult.Value;
         }
 

@@ -692,7 +692,7 @@ namespace JUST.UnitTests.Gramar
 
         object InvokeLoopFunctionFunc(string fn, string path, string alias, IContext context, IDictionary<string, JArray> parentArray, IDictionary<string, JToken> currentArrayElement, JToken input)
         {
-            string arrayAlias = JsonTransformer.GetAlias(alias, currentArrayElement);
+            string arrayAlias = alias ?? currentArrayElement.Last().Key;
             object[] parameters = !string.IsNullOrEmpty(path) ? 
                 new object[] { parentArray[arrayAlias], currentArrayElement[arrayAlias], path, context } :
                 new object[] { parentArray[arrayAlias], currentArrayElement[arrayAlias], context };
@@ -705,7 +705,7 @@ namespace JUST.UnitTests.Gramar
             previousAlias = previousAlias != null ? previousAlias : currentArrayElement.Last().Key;
             JToken input = currentArrayElement[previousAlias];
             object loopToken = Invoke("valueof", true, new object[] { loopPath, input, context }, context);
-            JArray loopArray = JsonTransformer.GetLoopArray(loopToken, context.IsStrictMode(), out IsObject);
+            JArray loopArray = loopToken as JArray ?? new JArray(loopToken); // JsonTransformer.GetLoopArray(loopToken, context.IsStrictMode(), out IsObject);
             KeyValuePair<string, JArray> k = new KeyValuePair<string, JArray>(loopAlias ?? $"loop{++loopCounter}", loopArray);
 
             if (parentArray == null)
