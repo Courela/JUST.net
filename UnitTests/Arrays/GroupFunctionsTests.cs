@@ -38,5 +38,17 @@ namespace JUST.UnitTests.Arrays
 
             Assert.AreEqual("{\"Result\":[{\"type:a\":\"air\",\"company\":\"Boeing\",\"all\":[{\"name\":\"airplane\"},{\"name\":\"Chopper\"}]},{\"type:a\":\"air\",\"company\":\"Concorde\",\"all\":[{\"name\":\"airplane\"}]},{\"type:a\":\"land\",\"company\":\"GM\",\"all\":[{\"name\":\"car\"},{\"name\":\"truck\"}]},{\"type:a\":\"sea\",\"company\":\"Viking\",\"all\":[{\"name\":\"ship\"}]}]}", result);
         }
+
+        [Test]
+        public void RedefineSplitCharWithDates()
+        {
+            const string transformer = "{ \"Result\": \"#grouparrayby($,payrollUnit|fromDate,all)\" }";
+            const string input = "[ { \"payrollUnit\": \"euro\", \"name\": \"John\", \"fromDate\": \"2022-01-01T00:00:00\" }, { \"payrollUnit\": \"euro\", \"name\": \"Smith\", \"fromDate\": \"2022-01-01T00:00:00\" }, { \"payrollUnit\": \"usd\", \"name\": \"Lucy\", \"fromDate\": \"2022-01-01T00:00:00\" }, { \"payrollUnit\": \"yen\", \"name\": \"Anne\", \"fromDate\": \"2022-02-01T00:00:00\" }, { \"payrollUnit\": \"usd\", \"name\": \"James\", \"fromDate\": \"2022-12-01T00:00:00\" }, { \"payrollUnit\": \"euro\", \"fromDate\": \"2022-06-01T00:00:00\", \"name\": \"Thelma\" } ]";
+
+            var context = new JUSTContext() { SplitGroupChar = '|' };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("{\"Result\":[{\"payrollUnit\":\"euro\",\"fromDate\":\"2022-01-01T00:00:00\",\"all\":[{\"name\":\"John\"},{\"name\":\"Smith\"}]},{\"payrollUnit\":\"usd\",\"fromDate\":\"2022-01-01T00:00:00\",\"all\":[{\"name\":\"Lucy\"}]},{\"payrollUnit\":\"yen\",\"fromDate\":\"2022-02-01T00:00:00\",\"all\":[{\"name\":\"Anne\"}]},{\"payrollUnit\":\"usd\",\"fromDate\":\"2022-12-01T00:00:00\",\"all\":[{\"name\":\"James\"}]},{\"payrollUnit\":\"euro\",\"fromDate\":\"2022-06-01T00:00:00\",\"all\":[{\"name\":\"Thelma\"}]}]}", result);
+        }
     }
 }
