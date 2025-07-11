@@ -276,7 +276,7 @@ namespace JUST.UnitTests
             const string input = "{ \"employees\": [{ \"employee_unique_id\": \"FA6FDECD-DFAD-4C6D-80E8-752643BF4C9E\",  \"clinician_id\": \"178\",  \"salutation\": null,  \"first_name\": \"Valid\",  \"can_drive\": true,  \"locations\": [{   \"location_id\": 23,   \"location_name\": \"test\"  }, {   \"location_id\": 24,   \"location_name\": \"test444\"  }  ] }, { \"exists\": \"true\", \"employee_unique_id\": \"GA6FDECD-DFAD-4C6D-80E8-752643BF4C9O\",  \"clinician_id\": \"179\",  \"salutation\": null,  \"first_name\": \"Valid222\",  \"can_drive\": false,  \"locations\": [{   \"location_id\": 23,   \"location_name\": \"test\"  }, {   \"location_id\": 24,   \"location_name\": \"test444\"  }  ] } ]}";
             const string transformer = "{ \"employees\": { \"#loop($.employees)\": { \"#ifgroup(#existsandnotempty($.exists))\": { \"print\": true, \"employee_unique_id\": \"#currentvalueatpath($.employee_unique_id)\" } } } }";
 
-            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict}).Transform(transformer, input);
+            var result = new JsonTransformer(new JUSTContext { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"employees\":[{\"employee_unique_id\":\"FA6FDECD-DFAD-4C6D-80E8-752643BF4C9E\"}]}", result);
         }
@@ -287,7 +287,7 @@ namespace JUST.UnitTests
             const string input = "{ \"dummy\": 1 }";
             const string transformer = "{ \"result\": \"#applyover(#returnToken(),'#valueof($.fn)')\" }";
 
-            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict };
             context.RegisterCustomFunction(null, "JUST.UnitTests.Token", "ReturnJToken", "returnToken");
             var result = new JsonTransformer(context).Transform(transformer, input);
 
@@ -300,7 +300,7 @@ namespace JUST.UnitTests
             const string input = "{ \"values\": [{ \"OrderNumber__c\": 123 }, { \"OrderNumber__c\": 456 }] }";
             const string transformer = "{ \"result\": \"#applyover(#array(#valueof($.values)),'#valueof($[1].OrderNumber__c)')\" }";
 
-            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict };
             context.RegisterCustomFunction(null, "JUST.UnitTests.Token", "Array", "array");
             var result = new JsonTransformer(context).Transform(transformer, input);
 
@@ -313,7 +313,7 @@ namespace JUST.UnitTests
             const string input = "{ \"values\": [{ \"OrderNumber__c\": 123 }, { \"OrderNumber__c\": 456 }] }";
             const string transformer = "{ \"result\": \"#applyover(#array(#valueof($.values)),{ '#loop($)': { 'curr': '#currentvalue()' } })\" }";
 
-            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict };
             context.RegisterCustomFunction(null, "JUST.UnitTests.Token", "Array", "array");
             var result = new JsonTransformer(context).Transform(transformer, input);
 
@@ -326,7 +326,7 @@ namespace JUST.UnitTests
             const string input = "{ \"Path\": \"Type1\", \"Children\": [ { \"Path\": \"Type1~Cat1\", \"Items\": [ { \"Id\": \"66717101\" }, { \"Id\": \"66717102\" } ], \"Children\": [ { \"Path\": \"Type1~Cat1~Sku1\", \"Items\": [ { \"Id\": \"66717101\" } ], \"Children\": [ { \"Path\": \"Type1~Cat1~Sku2~Model1\", \"Items\": [ { \"Id\": \"66717102\" } ] }, { \"Path\": \"Type1~Cat1~Sku1~Model1\", \"Items\": [ { \"Id\": \"66717101\" }, { \"Id\": \"66717102\" } ] } ] }, { \"Path\": \"Type1~Cat1~Sku2\", \"Items\": [ { \"Id\": \"66717101\" } ], \"Children\": [ { \"Path\": \"Type1~Cat1~Sku2~Model1\", \"Items\": [ { \"Id\": \"66717722\" } ] } ] } ] }, { \"Path\": \"Type1-Cat2\", \"Children\": [] }, { \"Path\": \"Type1-Cat3\", \"Children\": [] } ], \"Items\": [ { \"Id\": \"66717766\" }, { \"Id\": \"6828147\" } ]}";
             const string transformer = "[ \"#valueof($..Id)\", \"#valueof($..Path)\" ]";
 
-            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict };
             var result = new JsonTransformer(context).Transform(transformer, input);
 
             Assert.AreEqual("", result);
@@ -338,7 +338,7 @@ namespace JUST.UnitTests
             const string input = "{ \"open\": \"Open\", \"close\": \"Close\", \"menu\": { \"popup\": { \"menuitem\": [ { \"value\": \"Open\", \"onclick\": \"OpenDoc()\" }, { \"value\": \"Close\", \"onclick\": \"CloseDoc()\" } ], \"submenuitem\": \"CloseSession()\" } } }";
             const string transformer = "{ \"result\": { \"Open\": \"#valueof(#xconcat($.menu.popup.menuitem[?/(@.value == ',#valueof($.open),'/)].onclick))\", \"Close\": \"#valueof(#xconcat($.menu.popup.menuitem[?/(@.value == ',#valueof($.close),'/)].onclick))\" } }";
 
-            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict };
             var result = new JsonTransformer(context).Transform(transformer, input);
 
             Assert.AreEqual("", result);
@@ -351,7 +351,7 @@ namespace JUST.UnitTests
             //const string transformer = "{ \"result\": { \"#loop($.Questions)\": { \"#eval(#xconcat(Q,#currentindex()))\": [ \"#currentvalueatpath(#xconcat($.,#currentproperty()))\" ] } } }";
             const string transformer = "{ \"Questions\": \"#applyover({ 'result': { '#loop($.Questions)': { '#eval(#xconcat(Q,#currentindex()))': [ '#currentvalueatpath(#xconcat($.,#currentproperty()))' ] } } },'#xconcat(#valueof($.result.Q0),#valueof($.result.Q1))')\" }";
 
-             JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict};
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict };
             // var r1 = new JsonTransformer(context).Transform(transformer, input);
 
             // const string t2 = "{ \"Questions\": \"#xconcat(#valueof($.result.Q0),#valueof($.result.Q1))\" }";
@@ -367,7 +367,7 @@ namespace JUST.UnitTests
             const string input = "{ \"topLevelItems\": [ { \"name\": \"item1\", \"type\": \"someType\", \"selectable\": false, \"itemArray\": [ { \"property1\": \"item1_value1\", \"property2\": \"item1_value2\" } ] }, { \"name\": \"item2\", \"type\": \"someType\", \"selectable\": true, \"itemArray\": [ { \"property1\": \"item2_value1\", \"property2\": \"item2_value2\" } ] } ]}";
             const string transformer = "{\"filteredItems\": \"#valueof($.topLevelItems[?(@.selectable == true)])\", \"summary\": { \"#loop($..filteredItems)\": { \"name\": \"#currentvalueatpath($.name)\" } }, \"aliasedItems\": \"#valueof($..filteredItems)\" }";
 
-             JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict | EvaluationMode.LookInTransformed };
+            JUSTContext context = new JUSTContext { EvaluationMode = EvaluationMode.Strict | EvaluationMode.LookInTransformed };
             var result = new JsonTransformer(context).Transform(transformer, input);
 
             Assert.AreEqual("{\"filteredItems\":{\"name\":\"item2\",\"type\":\"someType\",\"selectable\":true,\"itemArray\":[{\"property1\":\"item2_value1\",\"property2\":\"item2_value2\"}]},\"summary\":{},\"aliasedItems\":{\"name\":\"item2\",\"type\":\"someType\",\"selectable\":true,\"itemArray\":[{\"property1\":\"item2_value1\",\"property2\":\"item2_value2\"}]}}", result);
@@ -383,7 +383,7 @@ namespace JUST.UnitTests
             //const string transformer = "{ \"items\": { \"#loop($.items)\": { \"#loop($)\": { \"#eval(#currentproperty())\": \"#ifcondition(#currentproperty(),id,987234345,#ifcondition(#currentvalueatpath($.keyTypeA),One,Three,#currentvalueatpath(#concat($.,#currentproperty()))))\" } } }}";
             //const string transformer = "{ \"items1\": { \"#loop($.items)\": { \"#\": [ \"#copy($)\", \"#delete($.id)\" ]  } } }";
             const string transformer = "{ \"items\": \"#applyover({ 'items1': { '#loop($.items[?/(@.keyTypeA == `One`/)])': { 'id': 'some_id'/, 'keyTypeA': 'some_key' } }/, 'items2': { '#loop($.items[?/(@.keyTypeA != `One`/)])': '#currentvalue()' }/, 'items3': { '#loop($.items[?/(@.keyTypeA == `One` && @.id/)])': { 'id': 'some_id', 'keyTypeA': 'Three' } } }, '#xconcat(#valueof($.items1), #valueof($.items2), #valueof($.items3))')\" }";
-            
+
             var result = new JsonTransformer(new JUSTContext() { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{\"items\":[{\"id\":\"987234345\",\"keyTypeA\":\"Three\"},{\"keyTypeA\":\"Three\"},{\"keyTypeA\":\"Two\"},{\"keyTypeB\":\"Red\"}]}", result);
@@ -396,12 +396,24 @@ namespace JUST.UnitTests
             //const string transformer = "{ \"rows\": { \"#loop($.rows)\": [ \"#currentvalueatpath($[?/(@ =~ //^B.*$///)])\" ] } }";
             //const string transformer = "{ \"rows\": { \"#loop($.rows)\": \"#currentvalueatpath($[?/(@ == 'B1'/)])\" } }";
             //const string transformer = "{ \"rows\": { \"#loop($.rows)\": \"#currentvalue()\" } }";
-            
+
             const string transformer = "{ \"rows\": { \"#loop($.rows)\": [ \"#currentvalueatpath($[?/(@ =~ //^B.*$///)])\" ] }, \"columns\": \"#valueof($.columns[?/(@ =~ //^B.*$///)])\" }";
 
             var result = new JsonTransformer(new JUSTContext() { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
 
             Assert.AreEqual("{}", result);
+        }
+        
+        [Test]
+        public void Issue311()
+        {
+            const string transformer = "{ \"Result\": \"#grouparrayby($,payrollUnit|fromDate,all)\" }";
+            const string input = "[ { \"payrollUnit\": \"euro\", \"name\": \"John\", \"fromDate\": \"2022-01-01T00:00:00\" }, { \"payrollUnit\": \"euro\", \"name\": \"Smith\", \"fromDate\": \"2022-01-01T00:00:00\" }, { \"payrollUnit\": \"usd\", \"name\": \"Lucy\", \"fromDate\": \"2022-01-01T00:00:00\" }, { \"payrollUnit\": \"yen\", \"name\": \"Anne\", \"fromDate\": \"2022-02-01T00:00:00\" }, { \"payrollUnit\": \"usd\", \"name\": \"James\", \"fromDate\": \"2022-12-01T00:00:00\" }, { \"payrollUnit\": \"euro\", \"fromDate\": \"2022-06-01T00:00:00\", \"name\": \"Thelma\" } ]";
+
+            var context = new JUSTContext() { SplitGroupChar = '|' };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("{\"Result\":[{\"payrollUnit\":\"euro\",\"fromDate\":\"2022-01-01T00:00:00\",\"all\":[{\"name\":\"John\"},{\"name\":\"Smith\"}]},{\"payrollUnit\":\"usd\",\"fromDate\":\"2022-01-01T00:00:00\",\"all\":[{\"name\":\"Lucy\"}]},{\"payrollUnit\":\"yen\",\"fromDate\":\"2022-02-01T00:00:00\",\"all\":[{\"name\":\"Anne\"}]},{\"payrollUnit\":\"usd\",\"fromDate\":\"2022-12-01T00:00:00\",\"all\":[{\"name\":\"James\"}]},{\"payrollUnit\":\"euro\",\"fromDate\":\"2022-06-01T00:00:00\",\"all\":[{\"name\":\"Thelma\"}]}]}", result);
         }
     }
 }
