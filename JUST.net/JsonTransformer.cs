@@ -218,7 +218,7 @@ namespace JUST
                     else if (property.Value.ToString().Trim().StartsWith("#"))
                     {
                         var propVal = property.Value.ToString().Trim();
-                        var output = ParseFunction(propVal, parentToken, state, input);
+                        var output = ParseFunction(propVal, state, input);
                         output = LookInTransformed(output, propVal, parentToken, state);
                         property.Value = GetToken(output);
                     }
@@ -235,7 +235,7 @@ namespace JUST
             else if (childToken.Type == JTokenType.String && childToken.Value<string>().Trim().StartsWith("#")
                 && state.ParentArray != null && state.CurrentArrayToken != null)
             {
-                object newValue = ParseFunction(childToken.Value<string>(), parentToken, state, input);
+                object newValue = ParseFunction(childToken.Value<string>(), state, input);
                 childToken.Replace(GetToken(newValue));
             }
 
@@ -271,7 +271,7 @@ namespace JUST
 
         private void LoopOperation(string propertyName, State state, TransformHelper helper, JToken childToken, JToken input)
         {
-            object function = ParseFunction(propertyName, null, state, input);
+            object function = ParseFunction(propertyName, state, input);
             JArray arrayToken = function is JArray ? function as JArray : GetPropertiesArray(function, Context.IsStrictMode());
 
             // TODO revisit
@@ -468,7 +468,7 @@ namespace JUST
         {
             string[] argumentArr = ExpressionHelper.SplitArguments(arguments, Context.EscapeChar);
 
-            object functionResult = ParseArgument(null, state, argumentArr[0], input);
+            object functionResult = ParseArgument(state, argumentArr[0], input);
             if (!(functionResult is string jsonPath))
             {
                 throw new ArgumentException($"Invalid path for #transform: '{argumentArr[0]}' resolved to null!");
@@ -478,7 +478,7 @@ namespace JUST
             string alias = "root";
             if (argumentArr.Length > 1)
             {
-                alias = ParseArgument(null, state, argumentArr[1], input) as string;
+                alias = ParseArgument(state, argumentArr[1], input) as string;
                 if (!state.CurrentArrayToken.Any(a => a.Key.Key == alias))
                 {
                     throw new ArgumentException($"Unknown loop alias: '{argumentArr[1]}'");
@@ -501,7 +501,7 @@ namespace JUST
                     JToken token = property.Value[i];
                     if (token.Type == JTokenType.String)
                     {
-                        var obj = ParseFunction(token.Value<string>(), null, state, transformInput);
+                        var obj = ParseFunction(token.Value<string>(), state, transformInput);
                         token.Replace(GetToken(obj));
                     }
                     else
@@ -747,20 +747,20 @@ namespace JUST
         {
             var args = ExpressionHelper.SplitArguments(arguments, Context.EscapeChar);
             var previousAlias = "root";
-            args[0] = (string)ParseFunction(args[0], null, state, input);
+            args[0] = (string)ParseFunction(args[0], state, input);
             _levelCounter++;
-            string alias = args.Length > 1 ? (string)ParseFunction(args[1].Trim(), null, state, input) : $"scope{_levelCounter}";
+            string alias = args.Length > 1 ? (string)ParseFunction(args[1].Trim(), state, input) : $"scope{_levelCounter}";
 
             if (args.Length > 2)
             {
-                previousAlias = (string)ParseFunction(args[2].Trim(), null, state, input);
+                previousAlias = (string)ParseFunction(args[2].Trim(), state, input);
             }
             else
             {
                 previousAlias = state.GetHigherAlias();
             }
 
-            var strScopeToken = ParseArgument(null, state, args[0], input) as string;
+            var strScopeToken = ParseArgument(state, args[0], input) as string;
 
             JToken scopeToken;
             var selectable = GetSelectableToken(state.GetAliasToken(previousAlias), Context);
@@ -786,7 +786,7 @@ namespace JUST
 
         private void ConditionalGroupOperation(string propertyName, string arguments, State state, TransformHelper helper, JToken childToken, JToken input)
         {
-            object functionResult = ParseFunction(arguments, null, state, input);
+            object functionResult = ParseFunction(arguments, state, input);
             bool result;
             try
             {
@@ -831,12 +831,12 @@ namespace JUST
 
         private void EvalOperation(JProperty property, string arguments, State state, TransformHelper helper, JToken input)
         {
-            object functionResult = ParseFunction(arguments, null, state, input);
+            object functionResult = ParseFunction(arguments, state, input);
 
             object val;
             if (property.Value.Type == JTokenType.String)
             {
-                val = ParseFunction(property.Value.Value<string>(), null, state, input);
+                val = ParseFunction(property.Value.Value<string>(), state, input);
             }
             else
             {
@@ -962,7 +962,7 @@ namespace JUST
                 object itemToAdd = arrEl.Value<JToken>();
                 if (arrEl.Type == JTokenType.String && arrEl.ToString().Trim().StartsWith("#"))
                 {
-                    itemToAdd = ParseFunction(null, arrEl.ToString(), state, input);
+                    itemToAdd = ParseFunction(arrEl.ToString(), state, input);
                 }
                 result.Add(itemToAdd);
             }
@@ -975,7 +975,7 @@ namespace JUST
         {
             string[] argumentArr = ExpressionHelper.SplitArguments(arguments, Context.EscapeChar);
             string path = argumentArr[0];
-            if (!(ParseArgument(null, state, path, input) is string jsonPath))
+            if (!(ParseArgument(state, path, input) is string jsonPath))
             {
                 throw new ArgumentException($"Invalid path for #copy: '{argumentArr[0]}' resolved to null!");
             }
@@ -983,7 +983,7 @@ namespace JUST
             string alias = null;
             if (argumentArr.Length > 1)
             {
-                alias = ParseArgument(null, state, argumentArr[1], input) as string;
+                alias = ParseArgument(state, argumentArr[1], input) as string;
                 if (!(state.CurrentArrayToken?.Any(a => a.Key.Key == alias) ?? false))
                 {
                     throw new ArgumentException($"Unknown loop alias: '{argumentArr[1]}'");
@@ -1004,11 +1004,11 @@ namespace JUST
             {
                 throw new Exception("Function #replace needs at least two arguments - 1. path to be replaced, 2. token to replace with.");
             }
-            if (!(ParseArgument(null, state, argumentArr[0], input) is string key))
+            if (!(ParseArgument(state, argumentArr[0], input) is string key))
             {
                 throw new ArgumentException($"Invalid path for #replace: '{argumentArr[0]}' resolved to null!");
             }
-            object str = ParseArgument(null, state, argumentArr[1], input);
+            object str = ParseArgument(state, argumentArr[1], input);
             JToken newToken = GetToken(str);
             return new KeyValuePair<string, JToken>(key, newToken);
         }
@@ -1018,7 +1018,7 @@ namespace JUST
         #region Delete
         private string Delete(string argument, State state, JToken input)
         {
-            if (!(ParseArgument(null, state, argument, input) is string result))
+            if (!(ParseArgument(state, argument, input) is string result))
             {
                 throw new ArgumentException($"Invalid path for #delete: '{argument}' resolved to null!");
             }
@@ -1028,7 +1028,7 @@ namespace JUST
 
         #region ParseFunction
 
-        private object ParseFunction(string functionString, JToken parentToken, State state, JToken input)
+        private object ParseFunction(string functionString, State state, JToken input)
         {
             // LoopContext localLoopContext = loopContext;
             // bool isObject = false;
@@ -1153,7 +1153,7 @@ namespace JUST
             }
             else
             {
-                output = ParseFunction(parameters[1].ToString().Trim().Trim('\''), null, state, JToken.Parse(localInput));
+                output = ParseFunction(parameters[1].ToString().Trim().Trim('\''), state, JToken.Parse(localInput));
             }
             
             state.CurrentArrayToken = tmpArray;
@@ -1176,13 +1176,13 @@ namespace JUST
             return alias;
         }
 
-        private object ParseArgument(JToken parentToken, State state, string argument, JToken input)
+        private object ParseArgument(State state, string argument, JToken input)
         {
             object output = argument;
             var trimmedArgument = argument.Trim();
             if (trimmedArgument.StartsWith("#"))
             {
-                return ParseFunction(trimmedArgument, parentToken, state, input);
+                return ParseFunction(trimmedArgument, state, input);
             }
             else if (trimmedArgument.StartsWith($"{Context.EscapeChar}#"))
             {
@@ -1193,21 +1193,21 @@ namespace JUST
 
         private object GetConditionalOutput(JToken parentToken, string[] arguments, State state, JToken input)
         {
-            var condition = ParseArgument(parentToken, state, arguments[0], input);
+            var condition = ParseArgument(state, arguments[0], input);
             condition = LookInTransformed(condition, arguments[0], parentToken, state);
-            var value = ParseArgument(parentToken, state, arguments[1], input);
+            var value = ParseArgument(state, arguments[1], input);
             value = LookInTransformed(value, arguments[1], parentToken, state);
             var equal = ComparisonHelper.Equals(condition, value, Context.EvaluationMode);
-            var index = (equal) ? 2 : 3;
+            var index = equal ? 2 : 3;
 
-            return ParseArgument(parentToken, state, arguments[index], input);
+            return ParseArgument(state, arguments[index], input);
         }
         
         private object LookInTransformed(object output, string propVal, JToken parentToken, State state)
         {
             if (output == null && Context.IsLookInTransformed())
             {
-                output = ParseFunction(propVal, parentToken, state, parentToken);
+                output = ParseFunction(propVal, state, parentToken);
             }
             return output;
         }
