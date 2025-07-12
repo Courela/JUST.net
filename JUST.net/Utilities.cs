@@ -61,7 +61,7 @@ namespace JUST
 
                     if (groupToken != null)
                     {
-                        object valueOfToken = Transformer.GetValue(groupToken);
+                        object valueOfToken = BaseTransformer.GetValue(groupToken);
 
                         if (groupedPair.ContainsKey(valueOfToken.ToString()))
                         {
@@ -130,7 +130,7 @@ namespace JUST
 
                         foreach (JToken groupToken in groupTokens)
                         {
-                            object valueOfToken = Transformer.GetValue(groupToken);
+                            object valueOfToken = BaseTransformer.GetValue(groupToken);
                             if (key == string.Empty)
                                 key += valueOfToken;
                             else

@@ -16,7 +16,7 @@ namespace JUST
 
     }
 
-    public class JsonTransformer<T> : Transformer<T>, IDisposable where T : ISelectableToken
+    public class JsonTransformer<T> : BaseTransformer<T>, IDisposable where T : ISelectableToken
     {
         private const string RootAlias = "root";
         protected Gramar.Grammar<T> Grammar;
@@ -285,7 +285,7 @@ namespace JUST
 
                     if (state.CurrentArrayToken.Keys.Any(l => l.Key == alias))
                     {
-                        state.CurrentArrayToken.Remove(state.CurrentArrayToken.First(t => t.Key.Key == alias));
+                        state.CurrentArrayToken.Remove(state.CurrentArrayToken.Single(t => t.Key.Key == alias));
                     }
                     state.CurrentArrayToken.Add(new LevelKey() { Key = alias, Level = _levelCounter }, elements.Current);
 

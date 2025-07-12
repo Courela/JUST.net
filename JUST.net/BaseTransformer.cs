@@ -7,13 +7,13 @@ using System.Linq;
 
 namespace JUST
 {
-    public abstract class Transformer
+    public abstract class BaseTransformer
     {
         protected int _levelCounter = 0;
 
         protected readonly JUSTContext Context;
 
-        public Transformer(JUSTContext context)
+        public BaseTransformer(JUSTContext context)
         {
             Context = context ?? new JUSTContext();
             Context.JsonSettings = JsonConvert.DefaultSettings != null ?
@@ -92,9 +92,9 @@ namespace JUST
         }
     }
 
-    public abstract class Transformer<T> : Transformer where T : ISelectableToken
+    public abstract class BaseTransformer<T> : BaseTransformer where T : ISelectableToken
     {
-        public Transformer(JUSTContext context) : base(context)
+        public BaseTransformer(JUSTContext context) : base(context)
         {
         }
 

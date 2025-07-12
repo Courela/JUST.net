@@ -16,7 +16,7 @@ namespace JUST
         }
     }
 
-    public class DataTransformer<T> : Transformer<T> where T: ISelectableToken
+    public class DataTransformer<T> : BaseTransformer<T> where T: ISelectableToken
     {
         public DataTransformer(JUSTContext context) : base(context)
         {
