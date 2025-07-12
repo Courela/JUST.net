@@ -1031,7 +1031,7 @@ namespace JUST
         private object ParseFunction(string functionString, JToken parentToken, State state, JToken input)
         {
             // LoopContext localLoopContext = loopContext;
-            bool isObject = false;
+            // bool isObject = false;
 
             Func<string, bool, object[], IContext, object> invokeFunc = (fn, convertParameters, parameters, context) =>
             {
@@ -1041,9 +1041,7 @@ namespace JUST
             Func<string, string, IContext, object> invokeCheckLoopFunc = (fn, path, context) =>
             {
                 object result;
-                JToken loopInput = state.CurrentArrayToken.Last().Value != null ?
-                    state.CurrentArrayToken.Last().Value :
-                    input;
+                JToken loopInput = state.GetAliasToken(state.GetHigherAlias());
                 result = Invoke(fn, true, new object[] { path, loopInput, context });
                 return result;
             };
@@ -1052,15 +1050,15 @@ namespace JUST
             {
                 string arrayAlias = alias ?? state.CurrentArrayToken.Last().Key.Key;
                 object[] parameters = !string.IsNullOrEmpty(path) ?
-                    new object[] { state.ParentArray.Single(a => a.Key.Key == arrayAlias), state.CurrentArrayToken.Single(t => t.Key.Key == arrayAlias), path, context } :
-                    new object[] { state.ParentArray.Single(a => a.Key.Key == arrayAlias), state.CurrentArrayToken.Single(t => t.Key.Key == arrayAlias), context };
+                    new object[] { state.ParentArray.Single(a => a.Key.Key == arrayAlias).Value, state.GetAliasToken(arrayAlias), path, context } :
+                    new object[] { state.ParentArray.Single(a => a.Key.Key == arrayAlias).Value, state.GetAliasToken(arrayAlias), context };
                 return Invoke(fn, true, parameters);
             };
 
             Func<string, string, string, IContext, JArray> loopOverAliasFunc = (loopPath, loopAlias, previousAlias, context) =>
             {
-                previousAlias = previousAlias ?? state.CurrentArrayToken.Last().Key.Key;
-                JToken loopInput = state.CurrentArrayToken.Single(l => l.Key.Key == previousAlias).Value;
+                previousAlias = previousAlias ?? state.GetHigherAlias();
+                JToken loopInput = state.GetAliasToken(previousAlias);
                 object loopToken = Invoke("valueof", true, new object[] { loopPath, loopInput, context });
                 JArray loopArray = loopToken as JArray ?? new JArray(loopToken); // JsonTransformer.GetLoopArray(loopToken, context.IsStrictMode(), out isObject);
                 // KeyValuePair<string, JArray> k = new KeyValuePair<string, JArray>(loopAlias ?? $"loop{++this._loopCounter}", loopArray);
@@ -1073,6 +1071,7 @@ namespace JUST
                 // localLoopContext ??= new LoopContext(null, null);
                 // localLoopContext.IsObject = isObject;
                 // localLoopContext.ParentArray.Add(k);
+                state.ParentArray ??= new Dictionary<LevelKey, JArray>(); 
                 state.ParentArray.Add(newLevelKey, loopArray);
 
                 return loopArray;
