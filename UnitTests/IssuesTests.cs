@@ -403,7 +403,7 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{}", result);
         }
-        
+
         [Test]
         public void Issue311()
         {
@@ -414,6 +414,18 @@ namespace JUST.UnitTests
             var result = new JsonTransformer(context).Transform(transformer, input);
 
             Assert.AreEqual("{\"Result\":[{\"payrollUnit\":\"euro\",\"fromDate\":\"2022-01-01T00:00:00\",\"all\":[{\"name\":\"John\"},{\"name\":\"Smith\"}]},{\"payrollUnit\":\"usd\",\"fromDate\":\"2022-01-01T00:00:00\",\"all\":[{\"name\":\"Lucy\"}]},{\"payrollUnit\":\"yen\",\"fromDate\":\"2022-02-01T00:00:00\",\"all\":[{\"name\":\"Anne\"}]},{\"payrollUnit\":\"usd\",\"fromDate\":\"2022-12-01T00:00:00\",\"all\":[{\"name\":\"James\"}]},{\"payrollUnit\":\"euro\",\"fromDate\":\"2022-06-01T00:00:00\",\"all\":[{\"name\":\"Thelma\"}]}]}", result);
+        }
+        
+        [Test]
+        public void Issue314()
+        {
+            const string transformer = "{ \"payload\": { \"produce-color\": { \"green\": { \"#loop($..fruit[?(@.color == 'green')])\": { \"name\": \"#currentvalueatpath($.name)\", \"other\": { \"#loop($..vegetables[?(@.color == 'green')],inner-loop,root)\": { \"name\": \"#currentvalueatpath($.name)\" } } } }, \"orange\": { \"#loop($..fruit[?(@.color == 'orange')])\": { \"name\": \"#currentvalueatpath($.name)\" }, \"#loop($..vegetables[?(@.color == 'orange')])\": { \"name\": \"#currentvalueatpath($.name)\" } }, \"red\": { \"#loop($..fruit[?(@.color == 'red')])\": { \"name\": \"#currentvalueatpath($.name)\" }, \"#loop($..vegetables[?(@.color == 'red')])\": { \"name\": \"#currentvalueatpath($.name)\" } }, \"yellow\": { \"#loop($..fruit[?(@.color == 'yellow')])\": { \"name\": \"#currentvalueatpath($.name)\" }, \"#loop($..vegetables[?(@.color == 'yellow')])\": { \"name\": \"#currentvalueatpath($.name)\" } } } }}";
+            const string input = "{ \"root\": { \"type\": \"produce\", \"vegetables\": [ { \"name\": \"tomato\", \"color\": \"red\" }, { \"name\": \"cucumber\", \"color\": \"green\" }, { \"name\": \"bell-pepper\", \"color\": \"yellow\" } ], \"fruit\": [ { \"name\": \"banana\", \"color\": \"yellow\" }, { \"name\": \"orange\", \"color\": \"orange\" }, { \"name\": \"apple\", \"color\": \"green\" } ] }}";
+
+            var context = new JUSTContext() { EvaluationMode = EvaluationMode.Strict };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("{\"payload\":{\"produce-color\":{\"green\":[{\"name\":\"apple\",\"other\":[{\"name\":\"cucumber\"}]}],\"orange\":[{\"name\":\"orange\"}],\"red\":[{\"name\":\"tomato\"}],\"yellow\":[{\"name\":\"banana\"},{\"name\":\"bell-pepper\"}]}}}", result);
         }
     }
 }
