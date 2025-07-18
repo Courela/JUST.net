@@ -405,6 +405,19 @@ namespace JUST.UnitTests
         }
 
         [Test]
+        public void Issue309()
+        {
+            // const string input = "{ \"entityDataStore\": { \"entityData\": { \"entityParent\": { \"NODE1\": \"dummy value\", \"NODE2\": \"dummy value\", \"NODE3\": \"dummy value\", \"NODE4\": \"dummy value\", \"entityParent-entityChild\": [ { \"Id1\": \"dummy value\", \"name\": \"dummy value\", \"entity\": \"dummy value\", \"ParentName\": \"dummy value\" }, { \"Id1\": \"dummy value\", \"name\": \"dummy value\", \"entity\": \"dummy value\", \"ParentName\": \"dummy value\" } ] } } }}";
+            // const string transformer = "{ \"newChanges\": { \"dataMember\": \"entityParent-entityChild\",  \"fields\": { \"entityDataStore\": { \"#loop($.entityDataStore.entityData.entityParent.entityParent-entityChild, rows)\": { \"#loop($)\": { \"#eval(#xconcat(val,#currentindex()))\": { \"columnName\": \"#currentproperty()\", \"originalValue\": null, \"currentValue\": \"#currentvalueatpath(#xconcat($.,#currentproperty()))\" } } } } }} }";
+
+            const string input = "{ \"entityDataStore\": { \"entityData\": { \"entityParent\": { \"NODE1\": \"dummy value\", \"NODE2\": \"dummy value\", \"NODE3\": \"dummy value\", \"NODE4\": \"dummy value\", \"entityParent-entityChild\": { \"Id1\": \"dummy value\", \"name\": \"dummy value\", \"entity\": \"dummy value\", \"ParentName\": \"dummy value\" } } } }}";
+            const string transformer = "{ \"newChanges\": { \"dataMember\": \"entityParent-entityChild\",  \"fields\": { \"entityDataStore\": { \"#loop($.entityDataStore.entityData.entityParent.entityParent-entityChild, rows)\": {  \"columnName\": \"#currentproperty()\", \"originalValue\": null, \"currentValue\": \"#currentvalueatpath(#xconcat($.,#currentproperty()))\" } } } }  }";
+            var result = new JsonTransformer(new JUSTContext() { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, input);
+
+            Assert.AreEqual("{}", result);
+        }
+
+        [Test]
         public void Issue311()
         {
             const string transformer = "{ \"Result\": \"#grouparrayby($,payrollUnit|fromDate,all)\" }";
@@ -419,13 +432,13 @@ namespace JUST.UnitTests
         [Test]
         public void Issue314()
         {
-            const string transformer = "{ \"payload\": { \"produce-color\": { \"green\": { \"#loop($..fruit[?(@.color == 'green')])\": { \"name\": \"#currentvalueatpath($.name)\", \"other\": { \"#loop($..vegetables[?(@.color == 'green')],inner-loop,root)\": { \"name\": \"#currentvalueatpath($.name)\" } } } }, \"orange\": { \"#loop($..fruit[?(@.color == 'orange')])\": { \"name\": \"#currentvalueatpath($.name)\" }, \"#loop($..vegetables[?(@.color == 'orange')])\": { \"name\": \"#currentvalueatpath($.name)\" } }, \"red\": { \"#loop($..fruit[?(@.color == 'red')])\": { \"name\": \"#currentvalueatpath($.name)\" }, \"#loop($..vegetables[?(@.color == 'red')])\": { \"name\": \"#currentvalueatpath($.name)\" } }, \"yellow\": { \"#loop($..fruit[?(@.color == 'yellow')])\": { \"name\": \"#currentvalueatpath($.name)\" }, \"#loop($..vegetables[?(@.color == 'yellow')])\": { \"name\": \"#currentvalueatpath($.name)\" } } } }}";
-            const string input = "{ \"root\": { \"type\": \"produce\", \"vegetables\": [ { \"name\": \"tomato\", \"color\": \"red\" }, { \"name\": \"cucumber\", \"color\": \"green\" }, { \"name\": \"bell-pepper\", \"color\": \"yellow\" } ], \"fruit\": [ { \"name\": \"banana\", \"color\": \"yellow\" }, { \"name\": \"orange\", \"color\": \"orange\" }, { \"name\": \"apple\", \"color\": \"green\" } ] }}";
+            const string transformer = "{ \"payload\": { \"produce-color\": { \"green\": { \"#loop($..fruit[?(@.color == 'green')], outside-loop)\": { \"name\": \"#currentvalueatpath($.name)\", \"outer-index\": \"#currentindex()\", \"other\": { \"#loop($..vegetables[?(@.color == 'green')],inner-loop,root)\": { \"name\": \"#currentvalueatpath($.name)\", \"inner-index\": \"#currentindex()\" } }, \"addionalInformation\": { \"outside-name\": \"#currentvalueatpath($.name)\" } } } } }}";
+            const string input = "{ \"root\": { \"type\": \"produce\", \"vegetables\": [ { \"name\": \"tomato\", \"color\": \"red\" }, { \"name\": \"cucumber\", \"color\": \"green\" }, { \"name\": \"bell-pepper\", \"color\": \"yellow\" }, { \"name\": \"colored-greens\", \"color\": \"green\" } ], \"fruit\": [ { \"name\": \"banana\", \"color\": \"yellow\" }, { \"name\": \"melon\", \"color\": \"green\" }, { \"name\": \"orange\", \"color\": \"orange\" }, { \"name\": \"apple\", \"color\": \"green\" }, { \"name\": \"pear\", \"color\": \"green\" } ] }}";
 
             var context = new JUSTContext() { EvaluationMode = EvaluationMode.Strict };
             var result = new JsonTransformer(context).Transform(transformer, input);
 
-            Assert.AreEqual("{\"payload\":{\"produce-color\":{\"green\":[{\"name\":\"apple\",\"other\":[{\"name\":\"cucumber\"}]}],\"orange\":[{\"name\":\"orange\"}],\"red\":[{\"name\":\"tomato\"}],\"yellow\":[{\"name\":\"banana\"},{\"name\":\"bell-pepper\"}]}}}", result);
+            Assert.AreEqual("{\"payload\":{\"produce-color\":{\"green\":[{\"name\":\"melon\",\"outer-index\":0,\"other\":[{\"name\":\"cucumber\",\"inner-index\":0},{\"name\":\"colored-greens\",\"inner-index\":1}],\"addionalInformation\":{\"outside-name\":\"melon\"}},{\"name\":\"apple\",\"outer-index\":1,\"other\":[{\"name\":\"cucumber\",\"inner-index\":0},{\"name\":\"colored-greens\",\"inner-index\":1}],\"addionalInformation\":{\"outside-name\":\"apple\"}},{\"name\":\"pear\",\"outer-index\":2,\"other\":[{\"name\":\"cucumber\",\"inner-index\":0},{\"name\":\"colored-greens\",\"inner-index\":1}],\"addionalInformation\":{\"outside-name\":\"pear\"}}]}}}", result);
         }
     }
 }
