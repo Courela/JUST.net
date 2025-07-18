@@ -248,7 +248,17 @@ namespace JUST.UnitTests.Arrays
         }
 
         [Test]
-        public void LoopingAlias()
+        public void SingleLoopingAlias()
+        {
+            const string transformer = "{ \"hello\": { \"#loop($.NestedLoop.Organization.Employee, employee, root)\": { \"Name\": \"#currentvalueatpath($.Name)\", \"NameExplicit\": \"#currentvalueatpath($.Name, employee)\" } } }";
+
+            var result = new JsonTransformer(new JUSTContext() { EvaluationMode = EvaluationMode.Strict }).Transform(transformer, ExampleInputs.NestedArrays);
+
+            Assert.AreEqual("{\"hello\":[{\"Name\":\"E2\",\"NameExplicit\":\"E2\"},{\"Name\":\"E1\",\"NameExplicit\":\"E1\"}]}", result);
+        }
+
+        [Test]
+        public void MultipleLoopingAlias()
         {
             const string transformer = "{ \"hello\": { \"#loop($.NestedLoop.Organization.Employee, employee)\": { \"Details\": { \"#loop($.Details, details)\": { \"CurrentCountry\": \"#currentvalueatpath($.Country, details)\", \"OuterName\": \"#currentvalueatpath($.Name, employee)\", \"FirstLevel\": { \"#loop($.Roles, roles)\": { \"Employee\": \"#currentvalue(employee)\", \"Job\": \"#currentvalueatpath($.Job, roles)\" } } } } } } }";
 
