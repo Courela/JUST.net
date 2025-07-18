@@ -278,6 +278,18 @@ namespace JUST.UnitTests.Arrays
         }
 
         [Test]
+        public void NestedLoopingAlias()
+        {
+            const string transformer = "{ \"payload\": { \"produce-color\": { \"green\": { \"#loop($..fruit[?(@.color == 'green')], outside-loop)\": { \"name\": \"#currentvalueatpath($.name)\", \"outer-index\": \"#currentindex()\", \"other\": { \"#loop($..vegetables[?(@.color == 'green')],inner-loop,root)\": { \"name\": \"#currentvalueatpath($.name)\", \"inner-index\": \"#currentindex()\" } }, \"addionalInformation\": { \"outside-name\": \"#currentvalueatpath($.name)\" } } } } }}";
+            const string input = "{ \"root\": { \"type\": \"produce\", \"vegetables\": [ { \"name\": \"tomato\", \"color\": \"red\" }, { \"name\": \"cucumber\", \"color\": \"green\" }, { \"name\": \"bell-pepper\", \"color\": \"yellow\" }, { \"name\": \"colored-greens\", \"color\": \"green\" } ], \"fruit\": [ { \"name\": \"banana\", \"color\": \"yellow\" }, { \"name\": \"melon\", \"color\": \"green\" }, { \"name\": \"orange\", \"color\": \"orange\" }, { \"name\": \"apple\", \"color\": \"green\" }, { \"name\": \"pear\", \"color\": \"green\" } ] }}";
+
+            var context = new JUSTContext() { EvaluationMode = EvaluationMode.Strict };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("{\"payload\":{\"produce-color\":{\"green\":[{\"name\":\"melon\",\"outer-index\":0,\"other\":[{\"name\":\"cucumber\",\"inner-index\":0},{\"name\":\"colored-greens\",\"inner-index\":1}],\"addionalInformation\":{\"outside-name\":\"melon\"}},{\"name\":\"apple\",\"outer-index\":1,\"other\":[{\"name\":\"cucumber\",\"inner-index\":0},{\"name\":\"colored-greens\",\"inner-index\":1}],\"addionalInformation\":{\"outside-name\":\"apple\"}},{\"name\":\"pear\",\"outer-index\":2,\"other\":[{\"name\":\"cucumber\",\"inner-index\":0},{\"name\":\"colored-greens\",\"inner-index\":1}],\"addionalInformation\":{\"outside-name\":\"pear\"}}]}}}", result);
+        }
+
+        [Test]
         public void BulkFunctions()
         {
             const string input = "{\"score_PCS\": [{\"data\": \"2020-04-08T10:20:21.335+00:00\",\"score\": [{\"score_type\": \"pcs_tot\",\"score_value\": 0.5},{\"score_type\": \"pcs_help\",\"score_value\": 0.46},{\"score_type\": \"pcs_rum\",\"score_value\": 0.5},{\"score_type\": \"pcs_mag\",\"score_value\": 0.63}]},{\"data\": \"2020-04-09T10:22:03.267+00:00\",\"score\": [{\"score_type\": \"pcs_tot\",\"score_value\": 0.38},{\"score_type\": \"pcs_help\",\"score_value\": 0.42},{\"score_type\": \"pcs_rum\",\"score_value\": 0.35},{\"score_type\": \"pcs_mag\",\"score_value\": 0.38}]},{\"data\": \"2020-04-09T10:23:05.748+00:00\",\"score\": [{\"score_type\": \"pcs_tot\",\"score_value\": 0.44},{\"score_type\": \"pcs_help\",\"score_value\": 0.38},{\"score_type\": \"pcs_rum\",\"score_value\": 0.5},{\"score_type\": \"pcs_mag\",\"score_value\": 0.5}]}]}";

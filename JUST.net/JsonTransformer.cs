@@ -477,10 +477,6 @@ namespace JUST
             if (args.Length > 2)
             {
                 previousAlias = (string)ParseFunction(args[2].Trim(), state);
-                // if (!state.CurrentArrayToken.Any(t => t.Key.Key == previousAlias))
-                // {
-                //     state.CurrentArrayToken.Add(new LevelKey() { Key = previousAlias, Level = _levelCounter }, Context.Input);
-                // }
             }
             else if (state.CurrentArrayToken.Any(t => t.Key.Key == alias))
             {
