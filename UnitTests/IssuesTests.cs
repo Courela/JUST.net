@@ -428,7 +428,7 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"Result\":[{\"payrollUnit\":\"euro\",\"fromDate\":\"2022-01-01T00:00:00\",\"all\":[{\"name\":\"John\"},{\"name\":\"Smith\"}]},{\"payrollUnit\":\"usd\",\"fromDate\":\"2022-01-01T00:00:00\",\"all\":[{\"name\":\"Lucy\"}]},{\"payrollUnit\":\"yen\",\"fromDate\":\"2022-02-01T00:00:00\",\"all\":[{\"name\":\"Anne\"}]},{\"payrollUnit\":\"usd\",\"fromDate\":\"2022-12-01T00:00:00\",\"all\":[{\"name\":\"James\"}]},{\"payrollUnit\":\"euro\",\"fromDate\":\"2022-06-01T00:00:00\",\"all\":[{\"name\":\"Thelma\"}]}]}", result);
         }
-        
+
         [Test]
         public void Issue314()
         {
@@ -439,6 +439,19 @@ namespace JUST.UnitTests
             var result = new JsonTransformer(context).Transform(transformer, input);
 
             Assert.AreEqual("{\"payload\":{\"produce-color\":{\"green\":[{\"name\":\"melon\",\"outer-index\":0,\"other\":[{\"name\":\"cucumber\",\"inner-index\":0},{\"name\":\"colored-greens\",\"inner-index\":1}],\"addionalInformation\":{\"outside-name\":\"melon\"}},{\"name\":\"apple\",\"outer-index\":1,\"other\":[{\"name\":\"cucumber\",\"inner-index\":0},{\"name\":\"colored-greens\",\"inner-index\":1}],\"addionalInformation\":{\"outside-name\":\"apple\"}},{\"name\":\"pear\",\"outer-index\":2,\"other\":[{\"name\":\"cucumber\",\"inner-index\":0},{\"name\":\"colored-greens\",\"inner-index\":1}],\"addionalInformation\":{\"outside-name\":\"pear\"}}]}}}", result);
+        }
+        
+        [Test]
+        public void Issue316()
+        {
+            // const string transformer = "{ \"payload\": { \"produce-color\": { \"test\": \"#valueof($..type)\", \"green\": { \"test\": \"#valueof($..type)\", \"#loop($..fruit[?(@.color == 'green')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\", \"other\": { \"#loop($..vegetables[?(@.color == 'green')],green,root)\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\" } } } }, \"orange\": { \"test\": \"#valueof($..type)\", \"#loop($..fruit[?(@.color == 'orange')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\" }, \"#loop($..vegetables[?(@.color == 'orange')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\" } }, \"red\": { \"Other\": { \"test\": \"#valueof($..type)\" }, \"#loop($..fruit[?(@.color == 'red')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\", \"Categories\": { \"category1\": \"#valueof($..type)\", \"#ifgroup(#exists($..type))\": { \"category2\": \"#valueof($..type)\" } } }, \"#loop($..vegetables[?(@.color == 'red')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\", \"Categories\": { \"#ifgroup(#exists($..type))\": { \"category\": \"#valueof($..type)\" } } } }, \"yellow\": { \"test\": \"#valueof($..type)\", \"#loop($..fruit[?(@.color == 'yellow')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\" }, \"#loop($..vegetables[?(@.color == 'yellow')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\" } } } }}";
+            const string transformer = "{ \"payload\": { \"produce-color\": { \"test\": \"#valueof($..type)\", \"green\": { \"test\": \"#valueof($..type)\", \"#loop($..fruit[?(@.color == 'green')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\", \"other\": { \"#loop($..vegetables[?(@.color == 'green')],green,root)\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\" } } } }, \"orange\": { \"test\": \"#valueof($..type)\", \"#loop($..fruit[?(@.color == 'orange')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\" }, \"#loop($..vegetables[?(@.color == 'orange')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\" } }, \"red\": { \"#loop($..fruit[?(@.color == 'red')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\", \"Categories\": { \"category1\": \"#valueof($..type)\", \"#ifgroup(#exists($..type))\": { \"category2\": \"#valueof($..type)\" } } }, \"#loop($..vegetables[?(@.color == 'red')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\", \"Categories\": { \"#ifgroup(#exists($..type,root))\": { \"category\": \"#valueof($..type)\" } } } }, \"yellow\": { \"test\": \"#valueof($..type)\", \"#loop($..fruit[?(@.color == 'yellow')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\" }, \"#loop($..vegetables[?(@.color == 'yellow')])\": { \"name\": \"#currentvalueatpath($.name)\", \"taste\": \"#currentvalueatpath($.taste)\" } } } }}";
+            const string input = "{ \"root\": { \"type\": \"produce\", \"vegetables\": [ { \"name\": \"tomato\", \"taste\": \"sweet\", \"color\": \"red\" }, { \"name\": \"cucumber\", \"taste\": \"fresh\", \"color\": \"green\" }, { \"name\": \"bell-pepper\", \"taste\": \"sweet\", \"color\": \"yellow\" } ], \"fruit\": [ { \"name\": \"banana\", \"taste\": \"sweet\", \"color\": \"yellow\" }, { \"name\": \"orange\", \"taste\": \"citrus\", \"color\": \"orange\" }, { \"name\": \"apple\", \"taste\": \"sweet\", \"color\": \"green\" }, { \"name\": \"nectarine\", \"taste\": \"sweet\", \"color\": \"red\" } ] }}";
+
+            var context = new JUSTContext() { EvaluationMode = EvaluationMode.Strict };
+            var result = new JsonTransformer(context).Transform(transformer, input);
+
+            Assert.AreEqual("", result);
         }
     }
 }
